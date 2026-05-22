@@ -22,24 +22,14 @@ export interface JdCardData {
   full_text: string
 }
 
-export interface MarketCardData {
-  family: string
-  timing: 'best' | 'good' | 'neutral' | 'caution' | 'no_data'
-  timing_label: string
-  demand_change_pct: number
-  salary_cagr: number
-  node_id: string | null
-  role_examples: string[]  // e.g. ["Java", "Python", "Go"] shown on card before click
-}
-
 export interface ChatMessage {
   id: string
   role: 'user' | 'ai'
   text: string
-  agent?: string  // which agent produced this response
   card?: CardData
   jdCards?: JdCardData[]
-  marketCards?: MarketCardData[]
+  actionTaken?: { action_type: string; label: string }[]
+  suggestions?: { action: string; prompt: string }[]
 }
 
 /** Extra metadata attached to the next AI response's card (e.g. JD URL from search origin) */
@@ -52,7 +42,6 @@ interface UseChatReturn {
   messages: ChatMessage[]
   isStreaming: boolean
   currentStreamText: string
-  currentStreamAgent: string | undefined
   sessionId: number | null
   sendMessage: (text: string, pendingCardContext?: PendingCardContext) => void
   clearMessages: () => void
@@ -84,7 +73,7 @@ export function useChat(onComplete?: () => void): UseChatReturn {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isStreaming, setIsStreaming] = useState(false)
   const [currentStreamText, setCurrentStreamText] = useState('')
-  const [currentStreamAgent, setCurrentStreamAgent] = useState<string | undefined>()
+  const [currentToolLabels, setCurrentToolLabels] = useState<string[]>([])
   const [sessionId, setSessionId] = useState<number | null>(null)
   const sessionIdRef = useRef<number | null>(null)
   const abortRef = useRef<AbortController | null>(null)
@@ -121,6 +110,7 @@ export function useChat(onComplete?: () => void): UseChatReturn {
 
       setIsStreaming(true)
       setCurrentStreamText('')
+      setCurrentToolLabels([])
 
       const controller = new AbortController()
       abortRef.current = controller
@@ -166,8 +156,8 @@ export function useChat(onComplete?: () => void): UseChatReturn {
           let accumulated = ''
           let pendingCard: CardData | undefined
           let pendingJdCards: JdCardData[] | undefined
-          let pendingMarketCards: MarketCardData[] | undefined
-          let pendingAgent: string | undefined
+          let pendingActionTaken: { action_type: string; label: string }[] = []
+          let pendingSuggestions: { action: string; prompt: string }[] = []
           const readT0 = performance.now()
 
           while (true) {
@@ -194,7 +184,26 @@ export function useChat(onComplete?: () => void): UseChatReturn {
                 const raw = line.slice(5).trim()
                 if (!raw || raw === '[DONE]') continue
                 try {
-                  const parsed = JSON.parse(raw) as { content?: string; session_id?: number; card?: CardData; jd_cards?: JdCardData[]; market_cards?: MarketCardData[]; agent?: string }
+                  const parsed = JSON.parse(raw) as {
+                    content?: string
+                    session_id?: number
+                    card?: CardData
+                    jd_cards?: JdCardData[]
+                    type?: string
+                    action_type?: string
+                    label?: string
+                    action?: string
+                    prompt?: string
+                  }
+                  if (parsed.type === 'action_taken' && parsed.action_type && parsed.label) {
+                    pendingActionTaken.push({ action_type: parsed.action_type, label: parsed.label })
+                  }
+                  if (parsed.type === 'suggest' && parsed.action && parsed.prompt) {
+                    pendingSuggestions.push({ action: parsed.action, prompt: parsed.prompt })
+                  }
+                  if (parsed.type === 'tool_calling' && parsed.label) {
+                    setCurrentToolLabels((prev) => [...prev, parsed.label])
+                  }
                   if (parsed.content) {
                     const text = parsed.content
                     // Heuristic: if the new text starts with what we already have,
@@ -217,15 +226,8 @@ export function useChat(onComplete?: () => void): UseChatReturn {
                   if (parsed.session_id != null) {
                     updateSessionId(parsed.session_id)
                   }
-                  if (parsed.agent) {
-                    pendingAgent = parsed.agent
-                    setCurrentStreamAgent(parsed.agent)
-                  }
                   if (parsed.jd_cards) {
                     pendingJdCards = parsed.jd_cards
-                  }
-                  if (parsed.market_cards) {
-                    pendingMarketCards = parsed.market_cards
                   }
                   if (parsed.card) {
                     // Merge pending context (e.g. JD URL from search origin) — client only fills
@@ -251,7 +253,7 @@ export function useChat(onComplete?: () => void): UseChatReturn {
           const finalText = accumulated || getFallbackResponse(trimmed)
           setMessages((prev) => [
             ...prev,
-            { id: genId(), role: 'ai', text: finalText, agent: pendingAgent, card: pendingCard, jdCards: pendingJdCards, marketCards: pendingMarketCards },
+            { id: genId(), role: 'ai', text: finalText, card: pendingCard, jdCards: pendingJdCards, actionTaken: pendingActionTaken, suggestions: pendingSuggestions },
           ])
         } catch (e) {
           if (e instanceof Error && e.name === 'AbortError') {
@@ -266,7 +268,7 @@ export function useChat(onComplete?: () => void): UseChatReturn {
         } finally {
           setIsStreaming(false)
           setCurrentStreamText('')
-          setCurrentStreamAgent(undefined)
+          setCurrentToolLabels([])
           abortRef.current = null
           pendingCardCtxRef.current = null  // consumed — clear for next turn
           onComplete?.()
@@ -284,6 +286,7 @@ export function useChat(onComplete?: () => void): UseChatReturn {
     setMessages([])
     setIsStreaming(false)
     setCurrentStreamText('')
+    setCurrentToolLabels([])
     updateSessionId(null)
   }, [updateSessionId])
 
@@ -316,7 +319,7 @@ export function useChat(onComplete?: () => void): UseChatReturn {
     pageContextRef.current = ctx
   }, [])
 
-  return { messages, isStreaming, currentStreamText, currentStreamAgent, sessionId, sendMessage, clearMessages, loadSession, setPageContext }
+  return { messages, isStreaming, currentStreamText, currentToolLabels, sessionId, sendMessage, clearMessages, loadSession, setPageContext }
 }
 
 /* ── Fallback responses when backend is unavailable ── */

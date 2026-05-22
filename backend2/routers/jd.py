@@ -9,9 +9,9 @@ from sqlalchemy.orm import Session
 
 from backend2.core.security import get_current_user
 from backend2.db.session import get_db
-from backend.models import JDDiagnosis, Profile, User
-from backend.services.graph import get_graph_service
-from backend.services.jd_service import JDService
+from core.models import JDDiagnosis, Profile, User
+from core.services.graph import get_graph_service
+from core.services.jd_service import JDService
 
 router = APIRouter()
 _jd_svc = JDService()

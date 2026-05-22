@@ -123,6 +123,7 @@ class ProfileData(BaseModel):
     weaknesses: list[str] = Field(default_factory=list)
     constraints: list[Constraint] = Field(default_factory=list)
     preferences: list[Preference] = Field(default_factory=list)
+    career_goal: dict | None = None   # 目标方向（从 CareerGoal 表合并进来）
 
     # ── 校验器 ──────────────────────────────────────────────────────────
 
@@ -247,6 +248,7 @@ class ProfileDataPatch(BaseModel):
     weaknesses: list[str] | None = None
     constraints: list[Constraint] | None = None
     preferences: list[Preference] | None = None
+    career_goal: dict | None = None
 
 
 class MyProfileResponse(BaseModel):

@@ -5,9 +5,9 @@
 """
 from __future__ import annotations
 
-from backend.db import SessionLocal
-from backend.models import Profile
-from backend.services.coach.memory import migrate_legacy_memo
+from core.db import SessionLocal
+from core.models import Profile
+from core.services.coach.memory import migrate_legacy_memo
 
 
 def main() -> None:

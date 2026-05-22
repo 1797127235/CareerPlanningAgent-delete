@@ -36,6 +36,10 @@ export async function fetchRecommendations(topK = 5): Promise<RecommendationsRes
   return rawFetch<RecommendationsResponse>(`/recommendations?top_k=${topK}`)
 }
 
+export async function regenerateRecommendations(): Promise<{ ok: boolean; node_id?: string; label?: string }> {
+  return rawFetch('/recommendations/regenerate', { method: 'POST' })
+}
+
 export async function fetchMatchDetail(roleId: string): Promise<MatchDetail> {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 60_000)

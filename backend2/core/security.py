@@ -18,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from backend2.core.config import JWT_SECRET_KEY as SECRET_KEY
 from backend2.db.session import get_db
-from backend.models import User  # 共享 ORM 模型
+from core.models import User  # 共享 ORM 模型
 
 # ── Config ───────────────────────────────────────────────────────-
 

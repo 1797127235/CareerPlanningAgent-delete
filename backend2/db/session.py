@@ -38,8 +38,8 @@ SessionLocal = sessionmaker(bind=engine, class_=Session, expire_on_commit=False)
 
 def init_db() -> None:
     """Create all tables if they don't exist (idempotent)."""
-    from backend.db import Base as SharedBase
-    from backend.models import (  # noqa: F401 - shared ORM models
+    from core.db import Base as SharedBase
+    from core.models import (  # noqa: F401 - shared ORM models
         User, Report, Profile, ProfileParse, CareerGoal,
         JobNode, JobEdge, JobScore,
         GrowthSnapshot, SkillUpdate, ActionProgress,

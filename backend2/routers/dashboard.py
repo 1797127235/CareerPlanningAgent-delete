@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 
 from backend2.core.security import get_current_user
 from backend2.db.session import get_db
-from backend.models import Profile, User
-from backend.services.dashboard_service import get_dashboard_stats, get_activity_heatmap
+from core.models import Profile, User
+from core.services.dashboard_service import get_dashboard_stats, get_activity_heatmap
 
 router = APIRouter()
 

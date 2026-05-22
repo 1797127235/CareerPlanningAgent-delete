@@ -7,7 +7,7 @@ pytestmark = pytest.mark.skip(reason="backend.interview_checklist module moved, 
 
 
 def test_template_question():
-    from backend.interview_checklist import _template_question
+    from core.interview_checklist import _template_question
     q = _template_question("Redis", "后端开发工程师")
     assert "Redis" in q["question"]
     assert q["status"] == "not_assessed"
@@ -15,7 +15,7 @@ def test_template_question():
 
 
 def test_checklist_stats():
-    from backend.interview_checklist import checklist_stats
+    from core.interview_checklist import checklist_stats
     mock_cl = MagicMock()
     mock_cl.items = [
         {"status": "can_answer"},

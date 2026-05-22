@@ -44,19 +44,19 @@ async def lifespan(app: FastAPI):
     # Init DB tables via backend2 engine (idempotent, same SQLite file)
     init_db_v2()
 
-    # Prewarm Supervisor in background (same as legacy backend)
+    # Prewarm the single agent in background (creates the LLM client + loads tools)
     def _prewarm():
         try:
-            from agent.supervisor import _get_cached_supervisor
-            _get_cached_supervisor()
-            logger.info("Supervisor pre-warmed")
+            from agent.runner import _get_agent
+            _get_agent()
+            logger.info("Agent pre-warmed")
         except Exception as exc:
-            logger.warning("Supervisor pre-warm skipped: %s", exc)
+            logger.warning("Agent pre-warm skipped: %s", exc)
 
     threading.Thread(target=_prewarm, daemon=True).start()
 
     # Start interview reminder scheduler (same as legacy backend)
-    from backend.services.system.scheduler import start_scheduler, stop_scheduler
+    from core.services.system.scheduler import start_scheduler, stop_scheduler
     start_scheduler()
 
     logger.info("backend2 unified runtime started")

@@ -1,0 +1,314 @@
+"""Automatic graph location for user profiles."""
+
+from __future__ import annotations
+
+import logging
+
+from sqlalchemy.orm import Session
+
+from core.models import CareerGoal, Profile
+from core.services.graph.matching import _llm_match_role, find_role_id_for_job_target
+from core.services.graph.query import get_graph_nodes, get_graph_edges
+from core.services.graph.skills import (
+    _build_work_content_summary,
+    _extract_implied_skills_from_text,
+    _expand_chinese_tokens,
+)
+
+logger = logging.getLogger(__name__)
+
+
+def _auto_locate_on_graph(
+    profile_id: int, user_id: int, profile_data: dict, db: Session
+) -> dict | None:
+    """Locate profile on career graph + generate recommendations in one LLM call.
+
+    Returns current position dict and caches recommendations for instant loading.
+    """
+    logger.info(
+        "[AUTO-LOCATE-START] profile_id=%d job_target=%r skills=%d",
+        profile_id,
+        profile_data.get("job_target", ""),
+        len(profile_data.get("skills", [])),
+    )
+    profile = None
+    p_hash = None
+    rec_resp = None
+    try:
+        from core.services.graph import get_graph_service
+
+        graph = get_graph_service(db)
+
+        llm_result = _llm_match_role(profile_data)
+        if not llm_result:
+            return None
+
+        current_pos = llm_result.get("current_position", llm_result)
+        node_id = current_pos["role_id"]
+
+        node = graph.get_node(node_id)
+        if not node:
+            return None
+        node_label = node.get("label", node_id)
+
+        existing_goal = (
+            db.query(CareerGoal)
+            .filter_by(user_id=user_id, profile_id=profile_id, is_active=True)
+            .first()
+        )
+        if existing_goal:
+            db.query(CareerGoal).filter_by(
+                user_id=user_id, profile_id=profile_id, is_active=True
+            ).update({"from_node_id": node_id})
+        else:
+            goal = CareerGoal(
+                user_id=user_id,
+                profile_id=profile_id,
+                from_node_id=node_id,
+                target_node_id="",
+                target_label="",
+                target_zone="",
+                is_primary=True,
+            )
+            db.add(goal)
+
+        # Cache recommendations from the same LLM call
+        recs_raw = llm_result.get("recommendations", [])
+        enriched = []
+        if recs_raw:
+            from backend2.routers.recommendations import _save_rec_cache
+            from core.services.gap_analyzer import profile_hash
+
+            graph_nodes = get_graph_nodes()
+
+            skills = [
+                s.get("name", "")
+                for s in profile_data.get("skills", [])
+                if s.get("name")
+            ]
+            for r in recs_raw[:6]:
+                rid = r.get("role_id", "")
+                if rid not in graph_nodes:
+                    logger.warning(
+                        "LLM hallucinated role_id=%s in auto_locate, skipping", rid
+                    )
+                    continue
+                gn = graph_nodes[rid]
+                enriched.append(
+                    {
+                        "role_id": rid,
+                        "label": r.get("label", gn.get("label", rid)),
+                        "affinity_pct": r.get("affinity_pct", 50),
+                        "matched_skills": [],
+                        "gap_skills": gn.get("must_skills", [])[:4],
+                        "gap_hours": 0,
+                        "zone": gn.get("zone", "safe"),
+                        "salary_p50": gn.get("salary_p50", 0),
+                        "reason": r.get("reason", ""),
+                        "channel": r.get("channel", "entry"),
+                        "career_level": gn.get("career_level", 0),
+                        "replacement_pressure": gn.get("replacement_pressure", 50),
+                        "human_ai_leverage": gn.get("human_ai_leverage", 50),
+                    }
+                )
+
+            # ── Locator only for backfill ranking, NOT override LLM ──
+            # LLM now receives full project/internship text; its judgment is
+            # more context-aware than skill-name-only IDF matching.
+            from core.services.profile.locator import locate_on_graph
+
+            try:
+                loc_result = locate_on_graph(profile_data, graph)
+                loc_scores = {nid: s for nid, s in loc_result.get("all_scores", [])}
+                # Store locator scores for backfill use, but keep LLM ranking
+                for rec in enriched:
+                    nid = rec["role_id"]
+                    if nid in loc_scores:
+                        rec["_loc_score"] = loc_scores[nid]
+                logger.info(
+                    "Locator scores computed for %d recommendations (not overriding LLM)",
+                    len(enriched),
+                )
+            except Exception as e:
+                logger.warning("Locator ranking failed: %s", e)
+
+            # ── Seniority hard filter on LLM result ────────────────────
+            # 应届生绝不推 L4+ 架构师/经理岗位，即便 LLM 推了也过滤掉
+            exp_years = profile_data.get("experience_years", 0) or 0
+            if exp_years == 0:
+                enriched = [r for r in enriched if (r.get("career_level") or 0) <= 3]
+            elif exp_years <= 1:
+                enriched = [r for r in enriched if (r.get("career_level") or 0) <= 4]
+
+            # ── Backfill: if LLM returns too few, supplement by skill+task overlap ──
+            # Two-layer scoring:
+            #   1) must_skills overlap (incl. text-scanned implied skills)
+            #   2) core_tasks match against user project/internship text
+            # A node with high task-match but low skill-overlap (e.g. QA where
+            # user has generic Python/SQL but rich test descriptions) can still
+            # rank high and be backfilled.
+            user_skill_set = {
+                (s.get("name") or "").lower().strip()
+                for s in profile_data.get("skills", [])
+                if isinstance(s, dict) and s.get("name")
+            }
+            user_skill_set |= _extract_implied_skills_from_text(profile_data)
+            existing_ids = {r["role_id"] for r in enriched}
+
+            # Build user text for task matching (same logic as prefilter)
+            from core.services._shared.text_extract import build_user_text
+
+            user_text_combined = build_user_text(profile_data)
+
+            from core.services._shared.backfill import (
+                compute_backfill_candidates,
+                build_backfill_rec,
+            )
+
+            backfill_candidates = compute_backfill_candidates(
+                graph_nodes,
+                user_skill_set,
+                user_text_combined,
+                existing_ids,
+                exp_years,
+                _expand_chinese_tokens,
+            )
+            backfilled = 0
+            for cand in backfill_candidates:
+                if len(enriched) >= 6:
+                    break
+                enriched.append(build_backfill_rec(*cand))
+                backfilled += 1
+            if backfilled:
+                logger.info(
+                    "Auto-locate backfill: added %d candidates (task+skill)", backfilled
+                )
+
+        # ── Fallback: if all LLM results were filtered, run skill-based backfill ──
+        if not enriched:
+            logger.info("All LLM recommendations filtered, running full backfill")
+            user_skill_set = {
+                (s.get("name") or "").lower().strip()
+                for s in profile_data.get("skills", [])
+                if isinstance(s, dict) and s.get("name")
+            }
+            user_skill_set |= _extract_implied_skills_from_text(profile_data)
+            user_text_combined = build_user_text(profile_data)
+            exp_years = profile_data.get("experience_years", 0) or 0
+
+            backfill_candidates = compute_backfill_candidates(
+                graph_nodes,
+                user_skill_set,
+                user_text_combined,
+                set(),
+                exp_years,
+                _expand_chinese_tokens,
+            )
+            for cand in backfill_candidates[:6]:
+                enriched.append(build_backfill_rec(*cand))
+            logger.info("Full backfill: added %d candidates", len(enriched))
+
+            # ── Add promotion targets（应届生不加，避免混淆）──────────
+            if exp_years >= 1:
+                graph_edges = get_graph_edges()
+                rec_ids = {r["role_id"] for r in enriched}
+                promotion_targets = set()
+                for e in graph_edges:
+                    if e.get("edge_type") == "vertical" and e["source"] in rec_ids:
+                        promotion_targets.add(e["target"])
+                for e in graph_edges:
+                    if e.get("edge_type") == "vertical" and e["source"] == node_id:
+                        promotion_targets.add(e["target"])
+                for pid in promotion_targets:
+                    if pid in rec_ids:
+                        continue
+                    pn = graph_nodes.get(pid, {})
+                    if not pn:
+                        continue
+                    cl = pn.get("career_level", 0) or 0
+                    if exp_years <= 1 and cl > 3:
+                        continue
+                    if exp_years <= 3 and cl > 4:
+                        continue
+                    enriched.append(
+                        {
+                            "role_id": pid,
+                            "label": pn.get("label", pid),
+                            "affinity_pct": 0,
+                            "matched_skills": [],
+                            "gap_skills": pn.get("must_skills", [])[:4],
+                            "gap_hours": 0,
+                            "zone": pn.get("zone", "safe"),
+                            "salary_p50": pn.get("salary_p50", 0),
+                            "reason": "晋升方向",
+                            "channel": "promotion",
+                            "career_level": cl,
+                            "replacement_pressure": pn.get("replacement_pressure", 50),
+                            "human_ai_leverage": pn.get("human_ai_leverage", 50),
+                        }
+                    )
+
+            # ── Programmatic job_target override (triple insurance) ────────────────
+            from core.services._shared.recommendations import (
+                apply_job_target_override,
+            )
+
+            job_target = profile_data.get("job_target", "") or ""
+            enriched = apply_job_target_override(
+                enriched,
+                job_target,
+                graph_nodes,
+                min_affinity=88,
+                boost_above_top=False,
+            )
+            target_role_id = find_role_id_for_job_target(job_target)
+            if target_role_id:
+                logger.info(
+                    "Auto-locate job_target override: moved %s to rank #1 (job_target=%s)",
+                    target_role_id,
+                    job_target,
+                )
+
+            profile = db.query(Profile).filter(Profile.id == profile_id).first()
+            if profile:
+                p_hash = profile_hash(profile_data)
+                rec_resp = {
+                    "recommendations": enriched,
+                    "user_skill_count": len(skills),
+                }
+                logger.info(
+                    "[AUTO-LOCATE-SAVED] profile_id=%d top_rec=%r job_target=%r",
+                    profile_id,
+                    enriched[0]["label"] if enriched else "none",
+                    profile_data.get("job_target", ""),
+                )
+
+        db.commit()
+
+        # Save recommendations cache — re-query profile to get a fresh
+        # session-managed object after commit (avoids DetachedInstanceError)
+        try:
+            from backend2.routers.recommendations import _save_rec_cache
+            from core.services.gap_analyzer import profile_hash as _ph
+
+            fresh_profile = db.query(Profile).filter(Profile.id == profile_id).first()
+            if fresh_profile and enriched:
+                p_hash = _ph(profile_data)
+                skill_count = len([s for s in profile_data.get("skills", []) if s.get("name")])
+                rec_resp = {"recommendations": enriched, "user_skill_count": skill_count}
+                _save_rec_cache(fresh_profile, p_hash, rec_resp, db)
+                logger.info(
+                    "[AUTO-LOCATE-CACHE-SAVED] profile_id=%d count=%d top=%r",
+                    profile_id, len(enriched), enriched[0].get("label", "?"),
+                )
+            else:
+                logger.warning(
+                    "[AUTO-LOCATE-CACHE-SKIP] profile_id=%d fresh=%s enriched=%d",
+                    profile_id, fresh_profile is not None, len(enriched),
+                )
+        except Exception as cache_err:
+            logger.exception("[AUTO-LOCATE-CACHE-FAILED] profile_id=%d: %s", profile_id, cache_err)
+
+        return {"node_id": node_id, "label": node_label}
+    except Exception as e:
+        logger.exception("[auto_locate] FAILED for user=%d profile_id=%d: %s", user_id, profile_id, e)

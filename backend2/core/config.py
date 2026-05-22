@@ -29,5 +29,10 @@ RESUMESDK_UID: str = os.getenv("RESUMESDK_UID", "")
 RESUMESDK_PWD: str = os.getenv("RESUMESDK_PWD", "")
 RESUMESDK_BASE_URL: str = os.getenv("RESUMESDK_BASE_URL", "https://www.resumesdk.com/api/parse")
 
+# ── Mem0 (Coach Memory) ──────────────────────────────────────────────────
+MEM0_LLM_MODEL: str = os.getenv("MEM0_LLM_MODEL", "deepseek-v4-flash")
+MEM0_EMBEDDING_MODEL: str = os.getenv("MEM0_EMBEDDING_MODEL", "text-embedding-v3")
+MEM0_LLM_TEMPERATURE: float = float(os.getenv("MEM0_LLM_TEMPERATURE", "0.1"))
+
 # ── DB ───────────────────────────────────────────────────────────────────
 DB_PATH: Path = Path(__file__).resolve().parent.parent.parent / "data" / "app_state" / "app.db"

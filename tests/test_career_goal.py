@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Tests for CareerGoal model and API endpoints."""
 import pytest
-from backend.db import SessionLocal, engine, Base
-from backend.models import CareerGoal, User, Profile
-from backend.auth import hash_password
+from core.db import SessionLocal, engine, Base
+from core.models import CareerGoal, User, Profile
+from backend2.core.security import hash_password
 
 
 @pytest.fixture

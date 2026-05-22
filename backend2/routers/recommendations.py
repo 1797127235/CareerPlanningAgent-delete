@@ -15,8 +15,8 @@ from sqlalchemy.orm import Session
 
 from backend2.core.security import get_current_user
 from backend2.db.session import get_db
-from backend.models import Profile, User
-from backend.services.graph.matching import find_role_id_for_job_target
+from core.models import Profile, User
+from core.services.graph.matching import find_role_id_for_job_target
 
 logger = logging.getLogger(__name__)
 
@@ -51,24 +51,14 @@ def _save_gap_cache(
     db.commit()
 
 
-# ── Role data loader (replaces SkillMatchService for role lookup) ─────────
+# ── Role data loader — uses graph.json via existing query layer ────────────
 
-_roles_data: dict[str, dict] | None = None
-
-
-def _get_roles_data() -> dict[str, dict]:
-    """Load roadmap_skills.json once."""
-    global _roles_data
-    if _roles_data is None:
-        path = Path("data/roadmap_skills.json")
-        with open(path, "r", encoding="utf-8") as f:
-            _roles_data = json.load(f)
-    return _roles_data
+from core.services.graph.query import get_graph_nodes
 
 
 def _get_role(role_id: str) -> dict | None:
-    """Get role data by ID."""
-    return _get_roles_data().get(role_id)
+    """Get role/node data by ID from graph.json."""
+    return get_graph_nodes().get(role_id)
 
 
 def _ensure_job_target_first(
@@ -105,8 +95,8 @@ def _ensure_job_target_first(
     if not job_target or job_target in {"未指定", "面议", "不限", "待定", "无"}:
         return recs, f"empty ({source})"
 
-    from backend.services._shared.recommendations import apply_job_target_override
-    from backend.services.graph.query import get_graph_nodes
+    from core.services._shared.recommendations import apply_job_target_override
+    from core.services.graph.query import get_graph_nodes
 
     graph_nodes = get_graph_nodes()
     recs = apply_job_target_override(
@@ -178,6 +168,39 @@ def get_recommendations_endpoint(
     return {"recommendations": [], "user_skill_count": 0}
 
 
+# ── Regenerate recommendations ────────────────────────────────────────────
+
+
+@router.post("/regenerate")
+def regenerate_recommendations(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Manually trigger recommendation generation for the current user.
+
+    Useful when cached_recs_json is empty or stale.
+    """
+    profile = db.query(Profile).filter(Profile.user_id == user.id).first()
+    if not profile:
+        raise HTTPException(400, "请先建立画像")
+
+    profile_data = json.loads(profile.profile_json or "{}")
+    if not profile_data.get("skills"):
+        raise HTTPException(400, "画像缺少技能数据，无法生成推荐")
+
+    try:
+        from core.services.graph.locator import _auto_locate_on_graph
+        result = _auto_locate_on_graph(profile.id, user.id, profile_data, db)
+        if not result:
+            raise HTTPException(500, "推荐生成失败，请检查日志")
+        return {"ok": True, "node_id": result.get("node_id"), "label": result.get("label")}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception("regenerate_recommendations failed: %s", e)
+        raise HTTPException(500, f"推荐生成异常：{e}")
+
+
 # ── Gap analysis detail (for MatchDetailPage) ─────────────────────────────
 
 
@@ -188,7 +211,7 @@ def get_match_analysis_detail(
     db: Session = Depends(get_db),
 ):
     """Get full LLM gap analysis detail for a specific role (DB-cached)."""
-    from backend.services.gap_analyzer import analyze_gaps, profile_hash
+    from core.services.gap_analyzer import analyze_gaps, profile_hash
 
     profile = db.query(Profile).filter(Profile.user_id == user.id).first()
     if not profile:

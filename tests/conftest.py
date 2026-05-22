@@ -28,7 +28,7 @@ def graph_data() -> dict:
 @pytest.fixture(scope="session")
 def graph_service():
     """Session-scoped GraphService instance with graph loaded."""
-    from backend.services.graph import GraphService
+    from core.services.graph import GraphService
     svc = GraphService()
     svc.load()
     return svc
@@ -37,7 +37,7 @@ def graph_service():
 @pytest.fixture(scope="session")
 def profile_service(graph_service):
     """Session-scoped ProfileService instance."""
-    from backend.services.profile import ProfileService
+    from core.services.profile import ProfileService
     return ProfileService(graph_service)
 
 
@@ -53,7 +53,7 @@ def db_engine():
         connect_args={"check_same_thread": False},
     )
     # Ensure all tables exist
-    from backend.db import Base
+    from core.db import Base
     from backend import models  # noqa: F401 — registers all ORM models
     Base.metadata.create_all(bind=engine)
     yield engine

@@ -14,8 +14,8 @@ from sqlalchemy.orm import Session
 
 from backend2.core.security import get_current_user
 from backend2.db.session import get_db, SessionLocal
-from backend.models import Profile, SjtSession, User
-from backend.services.graph.locator import _auto_locate_on_graph
+from core.models import Profile, SjtSession, User
+from core.services.graph.locator import _auto_locate_on_graph
 from backend2.routers._profiles_helpers import (
     _get_or_create_profile,
     _load_profile_json,
@@ -23,12 +23,12 @@ from backend2.routers._profiles_helpers import (
     _merge_profiles,
     _execute_profile_reset,
 )
-from backend.services.profile.parser.llm import _extract_profile_with_llm
-from backend.services.profile.parser.postprocess import _lazy_fix_misclassified_internships
-from backend.services.profile.parser.vlm import _ocr_pdf_with_vl
+from core.services.profile.parser.llm import _extract_profile_with_llm
+from core.services.profile.parser.postprocess import _lazy_fix_misclassified_internships
+from core.services.profile.parser.vlm import _ocr_pdf_with_vl
 
-from backend.services.profile import ProfileService
-from backend.utils import ok
+from core.services.profile import ProfileService
+from core.utils import ok
 
 logger = logging.getLogger(__name__)
 
@@ -88,13 +88,13 @@ async def parse_resume(
         raise HTTPException(400, "文件类型不符，请上传简历文档")
 
     # ── Extract raw text ───────────────────────────────────────────────────
-    from backend.services.profile.parser.text_extractor import extract_raw_text, is_scanned_pdf
+    from core.services.profile.parser.text_extractor import extract_raw_text, is_scanned_pdf
     raw_text = extract_raw_text(content, filename)
     scanned = is_scanned_pdf(content, filename, raw_text)
     logger.info("Resume parser strategy: filename=%s scanned=%s text_len=%d", filename, scanned, len(raw_text))
 
     # Pre-extract job_target via regex — works for both scanned and text-based PDFs
-    from backend.services.profile.parser import _extract_job_target_regex
+    from core.services.profile.parser import _extract_job_target_regex
     hint_jt = _extract_job_target_regex(raw_text)
 
     profile_data: dict | None = None
@@ -113,7 +113,7 @@ async def parse_resume(
         profile_data = _extract_profile_with_llm(raw_text, hint_job_target=hint_jt)
     else:
         # Text-based: use new parser pipeline (ResumeSDK + LLM adapter + merger)
-        from backend.services.profile.parser import parse_resume_pipeline
+        from core.services.profile.parser import parse_resume_pipeline
         parsed = parse_resume_pipeline(content, filename, hint_job_target=hint_jt)
         profile_data = parsed.to_dict()
 

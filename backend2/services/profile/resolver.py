@@ -30,7 +30,7 @@ def resolve_profile_context(
         HTTPException 404: 用户未创建画像
         HTTPException 500: 画像数据损坏
     """
-    from backend.models import Profile, ProfileParse
+    from core.models import Profile, ProfileParse
 
     profile_row = db.query(Profile).filter(Profile.user_id == user_id).first()
     if not profile_row:

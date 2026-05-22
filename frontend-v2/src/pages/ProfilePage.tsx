@@ -5,8 +5,10 @@ import { PenLine } from 'lucide-react'
 import { useProfileDataV2 } from '@/hooks/useProfileDataV2'
 import { useResumeUpload } from '@/hooks/useResumeUpload'
 import { saveProfile, patchProfileData } from '@/api/profiles-v2'
+import { fetchRecommendations, regenerateRecommendations } from '@/api/recommendations'
 import type { V2ParsePreviewResponse, V2ProfileData } from '@/api/profiles-v2'
 import type { ManualProfilePayload } from '@/types/profile'
+import type { Recommendation } from '@/components/profile-v2/cards/RecommendationCard'
 import { useToast } from '@/components/ui'
 import Navbar from '@/components/shared/Navbar'
 import { SjtQuiz } from '@/components/profile-v2/SjtQuiz'
@@ -52,6 +54,9 @@ export default function ProfilePage() {
   const [previewFormData, setPreviewFormData] = useState<ManualProfilePayload | null>(null)
   const [pendingPreviewForEdit, setPendingPreviewForEdit] = useState<V2ParsePreviewResponse | null>(null)
   const [editOpen, setEditOpen] = useState(false)
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([])
+  const [recLoading, setRecLoading] = useState(false)
+  const [regeneratingRecs, setRegeneratingRecs] = useState(false)
   const namePromptShown = useRef(false)
 
   // 当 parse-preview 返回数据时自动打开预览模态框
@@ -184,6 +189,30 @@ export default function ProfilePage() {
       setShowNamePrompt(true)
     }
   }, [justUploaded, loading, hasProfile, v2Data?.name, isMock])
+
+  const loadRecommendations = useCallback(async () => {
+    if (!hasProfile || isMock) return
+    setRecLoading(true)
+    try {
+      const resp = await fetchRecommendations(5)
+      setRecommendations(resp.recommendations.map((r) => ({
+        role_id: r.role_id,
+        label: r.label,
+        reason: r.reason,
+        zone: r.zone,
+        replacement_pressure: r.replacement_pressure,
+      })))
+    } catch {
+      setRecommendations([])
+    } finally {
+      setRecLoading(false)
+    }
+  }, [hasProfile, isMock])
+
+  // 加载推荐方向
+  useEffect(() => {
+    loadRecommendations()
+  }, [loadRecommendations, v2Data?.skills?.length])
 
   const handleNameConfirm = useCallback(async () => {
     if (!pendingName.trim()) return
@@ -406,12 +435,27 @@ export default function ProfilePage() {
               profile={v2Data}
               source={isMock ? 'resume' : (source || 'resume')}
               updatedAt={updatedAt ?? undefined}
+              recommendations={recommendations}
               onDelete={deleteProfile}
               onSaveEducation={handleSaveEducation}
               onSaveSkills={handleSaveSkills}
               onSaveInternships={handleSaveInternships}
               onSaveProjects={handleSaveProjects}
               onOpenEdit={() => setEditOpen(true)}
+              onExploreRec={(rec) => navigate(`/roles/${rec.role_id}`)}
+              regeneratingRecs={regeneratingRecs}
+              onRegenerateRecs={async () => {
+                setRegeneratingRecs(true)
+                try {
+                  await regenerateRecommendations()
+                  toast('推荐方向已重新计算')
+                  await loadRecommendations()
+                } catch (err) {
+                  toast(err instanceof Error ? err.message : '计算失败')
+                } finally {
+                  setRegeneratingRecs(false)
+                }
+              }}
             />
           ) : (
             <>
@@ -571,6 +615,12 @@ export default function ProfilePage() {
                     )}
                     {previewData.profile.job_target_text && (
                       <p className="text-[var(--ink-3)] mt-0.5">求职意向：{previewData.profile.job_target_text}</p>
+                    )}
+                    {previewData.profile.career_goal?.label && (
+                      <p className="text-[var(--ink-3)] mt-0.5">
+                        目标方向：
+                        <span className="text-[var(--ink-1)] font-medium">{previewData.profile.career_goal.label}</span>
+                      </p>
                     )}
                   </div>
                 )}

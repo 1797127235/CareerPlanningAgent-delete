@@ -7,7 +7,7 @@ from __future__ import annotations
 import json
 import logging
 from sqlalchemy.orm import Session
-from backend.models.profile import Profile, ProfileParse
+from core.models.profile import Profile, ProfileParse
 
 logger = logging.getLogger(__name__)
 

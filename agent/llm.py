@@ -1,10 +1,10 @@
 """
-agent/llm.py — Re-exports from backend.llm for backward compatibility.
+agent/llm.py — 从 core.llm 重新导出，保持向后兼容。
 
-The actual implementation lives in backend/llm.py.
-Agent code can continue to `from agent.llm import ...` without changes.
+实际实现在 backend/llm.py 中。
+agent 代码可继续使用 `from agent.llm import ...`，无需修改。
 """
-from backend.llm import (  # noqa: F401
+from core.llm import (  # noqa: F401
     get_chat_model,
     get_env_int,
     get_env_str,

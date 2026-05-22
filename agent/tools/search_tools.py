@@ -5,6 +5,7 @@
 2. 文章/博客/列表页检测
 3. JD 内容验证（包含岗位职责/任职要求关键词）
 """
+
 from __future__ import annotations
 
 import json
@@ -16,8 +17,8 @@ from langchain_core.tools import tool
 
 logger = logging.getLogger(__name__)
 
-# ContextVar for injecting user profile into search queries
-# Set by supervisor before calling navigator_agent/coach_agent
+# 用于将用户画像注入搜索查询的 ContextVar
+# 由 runner 在执行前设置
 _injected_profile_for_search: ContextVar[dict | None] = ContextVar(
     '_injected_profile_for_search', default=None
 )
@@ -27,12 +28,11 @@ _injected_goal_for_search: ContextVar[dict | None] = ContextVar(
 
 
 def _enrich_query_with_profile(query: str) -> str:
-    """Enrich a generic query with profile-based technical keywords.
+    """用画像中的技术关键词丰富通用查询。
 
-    If the query has no specific tech terms, prepend target role + top skills
-    from the user's profile/goal.
+    如果查询中没有特定技术词汇，则在前面加上目标岗位 + 核心技能。
     """
-    # Detect if query already has specific tech keywords
+    # 检测查询中是否已包含特定技术关键词
     _TECH_KEYWORDS = (
         "c++", "java", "python", "go", "rust", "javascript", "typescript",
         "react", "vue", "android", "ios", "flutter",
@@ -44,25 +44,25 @@ def _enrich_query_with_profile(query: str) -> str:
     has_tech = any(kw in query_lower for kw in _TECH_KEYWORDS)
 
     if has_tech:
-        return query  # Query already specific enough
+        return query  # 查询已经足够具体
 
-    # Pull from ContextVar
+    # 从 ContextVar 获取
     profile = _injected_profile_for_search.get()
     goal = _injected_goal_for_search.get()
 
     hints: list[str] = []
 
-    # Priority 1: target role from career goal
+    # 优先级 1：目标岗位（来自职业目标）
     if goal and goal.get("label"):
         hints.append(goal["label"])
 
-    # Priority 2: primary_domain or job_target from profile
+    # 优先级 2：画像中的 primary_domain 或 job_target
     if profile:
         jt = profile.get("job_target") or profile.get("primary_domain") or ""
         if jt and jt not in hints:
             hints.append(jt)
 
-        # Priority 3: top 2 skills
+        # 优先级 3：前 2 个技能
         skills = profile.get("skills", [])[:3]
         skill_names = []
         for s in skills:
@@ -79,26 +79,26 @@ def _enrich_query_with_profile(query: str) -> str:
 
     return query
 
-# ── Layer 1: Aggregator domain blocklist ─────────────────────────────────────
-# Inspired by JobMatch-AI's 37-item list, extended with Chinese job sites
+# ── 第 1 层：聚合站域名黑名单 ─────────────────────────────────────────────
+# 参考 JobMatch-AI 的 37 条列表，扩展了中文招聘站点
 
-# Block search/listing pages and non-job content, but ALLOW individual JD detail pages
+# 屏蔽搜索/列表页和非招聘内容，但允许单个 JD 详情页
 _BLOCKED_DOMAINS = [
-    # JD template / sample sites (not real postings)
+    # JD 模板/样例站（非真实发布）
     "youzhuo.io", "pvuik.com", "meijob.com", "zhiyeapp.com",
-    # Social / forum / Q&A (not job postings)
+    # 社交/论坛/问答（非招聘发布）
     "reddit.com", "zhihu.com", "v2ex.com",
     "jianshu.com", "juejin.cn", "csdn.net/blog",
-    # International aggregators (not relevant for Chinese market)
+    # 海外聚合站（与中国市场无关）
     "linkedin.com", "indeed.com", "glassdoor.com", "monster.com",
     "ziprecruiter.com", "simplyhired.com",
-    # Low-quality / off-topic sources
-    "gaoxiaojob.com",   # 高校人才网 — content quality poor, includes non-tech roles
-    "yingjiesheng.com", # 应届生求职网 — often outdated
-    "jobui.com",        # content thin
+    # 低质量/无关来源
+    "gaoxiaojob.com",   # 高校人才网 — 内容质量差，含非技术岗位
+    "yingjiesheng.com", # 应届生求职网 — 常过期
+    "jobui.com",        # 内容单薄
 ]
 
-# Search/listing page URL patterns to block (individual JD pages are allowed)
+# 搜索/列表页 URL 模式屏蔽（允许单个 JD 页面）
 _LISTING_PAGE_PATTERNS = [
     r"zhipin\.com/web/geek/job\?",  # BOSS搜索页
     r"zhipin\.com/\?",
@@ -109,7 +109,7 @@ _LISTING_PAGE_PATTERNS = [
     r"/jobs\?", r"/jobs/search", r"/joblist",
 ]
 
-# ── Layer 2: Article / blog / guide detection ────────────────────────────────
+# ── 第 2 层：文章/博客/指南检测 ────────────────────────────────────────────
 
 _ARTICLE_PATTERNS = [
     r"/blog/", r"/article/", r"/news/", r"/guide",
@@ -117,22 +117,22 @@ _ARTICLE_PATTERNS = [
     r"薪资报告", r"行业分析", r"面经",
 ]
 
-# ── Layer 3: JD content verification ─────────────────────────────────────────
+# ── 第 3 层：JD 内容验证 ─────────────────────────────────────────────────────
 
-# Strong positive: these almost always mean a real job posting
+# 强正信号：这些关键词几乎一定表示真实招聘发布
 _JD_STRONG_POSITIVE = [
     "岗位职责", "任职要求", "职位描述", "岗位要求", "任职资格",
     "工作内容", "职位要求",
     "responsibilities", "qualifications", "requirements:", "what you'll do",
 ]
 
-# Weak positive: supportive signals (need at least 2 to count)
+# 弱正信号：辅助信号（需至少 2 个才算有效）
 _JD_WEAK_POSITIVE = [
     "岗位名称", "工作地点", "薪资范围", "汇报对象", "发布时间",
     "apply now", "hiring", "we're looking for",
 ]
 
-# Strong negative: Q&A format, FAQ pages, meta-discussion about recruitment
+# 强负信号：问答格式、FAQ 页面、关于招聘的讨论（非 JD 本身）
 _JD_NEGATIVE = [
     "Q：", "Q:", "A：", "A:",
     "投递时间：", "校园招聘Q&A", "全职补录", "招聘答疑",
@@ -142,16 +142,16 @@ _JD_NEGATIVE = [
     "frequently asked", "faq",
 ]
 
-# Job ID pattern: hiring IDs like "职位 ID：A192104" or "Job ID: 12345"
+# 职位 ID 模式：如 "职位 ID：A192104" 或 "Job ID: 12345"
 _JOB_ID_RE = re.compile(r"职位\s*(ID|编号)[:：]?\s*[A-Z0-9]{4,}|Job\s*ID[:：]?\s*\w{4,}", re.IGNORECASE)
 
-# Numbered requirements pattern: matches "1、文字" "2.文字" style without false-matching "1.5倍"
-# Requires: digit + 、/．/. + non-digit non-whitespace char (rules out decimal numbers)
+# 编号要求模式：匹配 "1、文字" "2.文字" 风格，排除 "1.5倍" 等小数误匹配
+# 要求：数字 + 、/．/. + 非数字非空白字符（排除小数）
 _NUMBERED_REQ_RE = re.compile(r"[1-9][、．\.]\s*[^\d\s.]")
 
 
 def _is_blocked(url: str) -> bool:
-    """Check if URL is a blocked site, listing page, or article."""
+    """检查 URL 是否属于被屏蔽的站点、列表页或文章。"""
     url_lower = url.lower()
     if any(d in url_lower for d in _BLOCKED_DOMAINS):
         return True
@@ -163,28 +163,28 @@ def _is_blocked(url: str) -> bool:
 
 
 def _looks_like_jd(text: str) -> bool:
-    """Verify content is a real job posting, not an FAQ or landing page.
+    """验证内容是真实招聘 JD，而非 FAQ 或着陆页。
 
-    Uses signal scoring:
-      - Hard reject: multiple Q&A markers or explicit FAQ keywords
-      - Hard accept: job ID + numbered requirements
-      - Soft scoring: strong_positive (2 pts) + weak_positive (1 pt) ≥ 3
+    使用信号评分机制：
+      - 硬拒绝：多个问答标记或明确的 FAQ 关键词
+      - 硬通过：职位 ID + 编号要求（非常强的信号）
+      - 软评分：强正信号 (2分) + 弱正信号 (1分) ≥ 3
     """
     if not text or len(text) < 100:
         return False
 
-    # Hard reject: FAQ/Q&A patterns
+    # 硬拒绝：FAQ/问答模式
     negative_hits = sum(1 for kw in _JD_NEGATIVE if kw in text)
     if negative_hits >= 2:
         return False
 
-    # Hard accept: has job ID AND numbered requirements (very strong signal)
+    # 硬通过：有职位 ID 且有编号要求（非常强的信号）
     has_job_id = bool(_JOB_ID_RE.search(text))
     numbered_matches = _NUMBERED_REQ_RE.findall(text)
     if has_job_id and len(numbered_matches) >= 2:
         return True
 
-    # Soft scoring
+    # 软评分
     score = 0
     text_lower = text.lower()
     for kw in _JD_STRONG_POSITIVE:
@@ -193,7 +193,7 @@ def _looks_like_jd(text: str) -> bool:
     for kw in _JD_WEAK_POSITIVE:
         if kw.lower() in text_lower:
             score += 1
-    # Numbered list bonus
+    # 编号列表加分
     if len(numbered_matches) >= 3:
         score += 2
 
@@ -201,7 +201,7 @@ def _looks_like_jd(text: str) -> bool:
 
 
 def _extract_requirements(text: str) -> str:
-    """Extract technical requirements section, filter salary/benefits noise."""
+    """提取技术要求部分，过滤薪资/福利等噪音。"""
     patterns = [
         r"(?:任职要求|岗位要求|职位要求|技能要求|Requirements)[\s:：]*([\s\S]{30,800}?)(?:薪资|福利|待遇|工作地|联系|投递|公司介绍|$)",
         r"(?:岗位职责|工作职责|Job Description)[\s:：]*([\s\S]{30,800}?)(?:薪资|福利|待遇|$)",
@@ -214,7 +214,7 @@ def _extract_requirements(text: str) -> str:
 
 
 def _extract_skills(text: str) -> list[str]:
-    """Extract skill keywords from JD text."""
+    """从 JD 文本中提取技能关键词。"""
     known_skills = [
         "C++", "C", "Java", "Python", "Go", "Rust", "JavaScript", "TypeScript",
         "React", "Vue", "Node.js", "Spring", "Django", "Flask",
@@ -233,15 +233,15 @@ def _extract_skills(text: str) -> list[str]:
     return found[:8]
 
 
-# ── Official career sites loader ─────────────────────────────────────────────
+# ── 官方校招网站加载器 ─────────────────────────────────────────────────────
 
 def _load_career_sites() -> dict:
-    """Load official career sites config from YAML.
+    """从 YAML 加载官方校招网站配置。
 
-    Returns:
-        alias_map:        {alias -> campus_domain}
-        all_campus:       all campus_domain values (default search scope)
-        all_social:       all social domain values (fallback)
+    返回:
+        alias_map:        {别名 -> 校招域名}
+        all_campus:       所有校招域名（默认搜索范围）
+        all_social:       所有社招域名（兜底）
     """
     import os
     import yaml
@@ -270,15 +270,15 @@ def _load_career_sites() -> dict:
 
 @tool
 def search_real_jd(query: str) -> str:
-    """搜索真实JD：只从官方招聘网站搜索真实招聘岗位，返回结构化JSON。
-    输入搜索关键词（如"字节跳动 后端工程师 校招"或"腾讯 C++ 校园招聘"）。
-    重要：应届生用户请在关键词中加"校招"或"校园招聘"，否则会返回社招职位（要求工作经验）。
-    返回格式为 [JD_SEARCH_RESULTS:json] 标记，前端会渲染为可点击的卡片。
+    """从官方招聘网站搜索真实招聘岗位，返回结构化JSON。
+
+    query: 搜索关键词，如"字节跳动 后端工程师 校招"
+    返回格式为 [JD_SEARCH_RESULTS:json] 标记，前端渲染为可点击卡片。
     """
     if not query or not query.strip():
         return "请提供搜索关键词，如'C++ 后端开发'。"
 
-    # Enrich generic queries with user profile context (prevents HR/misc results)
+    # 用画像中的搜索关键词丰富通用查询（防止返回 HR/杂项结果）
     query = _enrich_query_with_profile(query.strip())
 
     try:
@@ -291,18 +291,18 @@ def search_real_jd(query: str) -> str:
 
         client = TavilyClient(api_key=api_key)
 
-        # Load official sites config
+        # 加载官方网站配置
         sites_config = _load_career_sites()
         alias_map: dict = sites_config["alias_map"]
         all_campus: list = sites_config["all_campus"]
 
-        # Detect company-specific query → restrict to that company's campus domain
+        # 检测公司特定查询 → 限制到该公司的校招域名
         query_lower = query.lower()
         matched_domain = next(
             (domain for alias, domain in alias_map.items() if alias in query_lower),
             None
         )
-        # Default: campus domains only (no social hire results)
+        # 默认：仅校招域名（不返回社招结果）
         include_domains = [matched_domain] if matched_domain else all_campus
 
         search_query = f"{query} 招聘 岗位职责 任职要求"
@@ -319,12 +319,12 @@ def search_real_jd(query: str) -> str:
             company_hint = f"「{matched_domain}」校招页" if matched_domain else "各大厂校招官网"
             return f"在{company_hint}未搜到与'{query}'相关的校招岗位，可能该职位本季度未开放校招，建议关注秋招/春招窗口期。"
 
-        # Filter: must look like actual JD content
+        # 过滤：必须像真正的 JD 内容
         filtered = [r for r in raw_results if _looks_like_jd(r.get("content", ""))]
         if not filtered:
             filtered = raw_results[:3]
 
-        # Build structured results
+        # 构建结构化结果
         jd_cards = []
         for r in filtered[:5]:
             content = r.get("content", "")
@@ -340,7 +340,7 @@ def search_real_jd(query: str) -> str:
                 "full_text": content[:3000],  # expanded from 1000 to preserve 任职要求 section
             })
 
-        # Return structured marker for frontend rendering
+        # 返回结构化标记供前端渲染
         marker = f"[JD_SEARCH_RESULTS:{json.dumps(jd_cards, ensure_ascii=False)}]"
         summary = f"搜到 {len(jd_cards)} 份相关招聘，你可以选择感兴趣的做匹配度诊断。"
         return f"{summary}\n{marker}"
@@ -353,12 +353,12 @@ def search_real_jd(query: str) -> str:
 
 
 def _get_domain(url: str) -> str:
-    """Extract readable domain from URL."""
+    """从 URL 提取可读域名。"""
     try:
         from urllib.parse import urlparse
         parsed = urlparse(url)
         host = parsed.hostname or ""
-        # Remove www prefix
+        # 去除 www 前缀
         if host.startswith("www."):
             host = host[4:]
         return host

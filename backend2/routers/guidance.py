@@ -14,7 +14,7 @@ from sqlalchemy import func
 
 from backend2.core.security import get_current_user
 from backend2.db.session import get_db
-from backend.models import (
+from core.models import (
     InterviewRecord,
     JDDiagnosis,
     JobApplication,
@@ -27,7 +27,7 @@ from backend.models import (
 
 logger = logging.getLogger(__name__)
 
-from backend.services.growth.stage import compute_stage
+from core.services.growth.stage import compute_stage
 
 router = APIRouter()
 

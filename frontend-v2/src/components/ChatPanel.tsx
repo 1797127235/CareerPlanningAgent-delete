@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useChat } from '@/hooks/useChat'
-import type { ChatMessage, CardData, JdCardData, MarketCardData } from '@/hooks/useChat'
+import type { ChatMessage, CardData, JdCardData } from '@/hooks/useChat'
 import { API_BASE } from '@/api/client'
 import { useSessions } from '@/hooks/useSessions'
 import { useBrowserTTS } from '@/hooks/useBrowserTTS'
@@ -74,7 +74,7 @@ export function ChatPanel({ open, onClose, mode = 'float' }: ChatPanelProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { sessions, grouped: sessionGroups, refetch: refetchSessions, deleteSession } = useSessions()
-  const { messages, isStreaming, currentStreamText, currentStreamAgent, sessionId, sendMessage, clearMessages, loadSession, setPageContext } = useChat(refetchSessions)
+  const { messages, isStreaming, currentStreamText, currentToolLabels, sessionId, sendMessage, clearMessages, loadSession, setPageContext } = useChat(refetchSessions)
 
   /* ── Sync page context on route change ── */
   useEffect(() => {
@@ -480,22 +480,31 @@ export function ChatPanel({ open, onClose, mode = 'float' }: ChatPanelProps) {
             ))}
 
             {/* Streaming */}
-            {isStreaming && currentStreamText && (() => {
-              const sCfg = agentConfig[currentStreamAgent ?? ''] ?? agentConfig.coach_agent
-              return (
-                <div className="mb-4">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <div className={`w-6 h-6 rounded-lg ${sCfg.color} flex items-center justify-center text-white`}>
-                      <Compass className="w-3.5 h-3.5" />
+            {isStreaming && currentStreamText && (
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <div className="w-6 h-6 rounded-lg bg-[var(--chestnut)] flex items-center justify-center text-white">
+                    <Compass className="w-3.5 h-3.5" />
+                  </div>
+                  <span className="text-[12px] font-semibold text-[#8A7E6B]">智析教练</span>
+                  {currentToolLabels.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {currentToolLabels.map((label, i) => (
+                        <span
+                          key={i}
+                          className="px-1.5 py-0.5 rounded-md text-[10px] font-medium bg-[#F2EDE4] text-[#8A7E6B] border border-[#E8E0D4]"
+                        >
+                          {label}
+                        </span>
+                      ))}
                     </div>
-                    <span className="text-[12px] font-semibold text-[#8A7E6B]">{sCfg.name}</span>
-                  </div>
-                  <div className="bg-white/[0.38] backdrop-blur-[16px] border border-white/[0.35] text-[var(--text-1)] px-4 py-3 rounded-[4px_14px_14px_14px] text-[13px] leading-[1.7] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
-                    <AIMarkdown text={currentStreamText} />
-                  </div>
+                  )}
                 </div>
-              )
-            })()}
+                <div className="bg-white/[0.38] backdrop-blur-[16px] border border-white/[0.35] text-[var(--text-1)] px-4 py-3 rounded-[4px_14px_14px_14px] text-[13px] leading-[1.7] shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                  <AIMarkdown text={currentStreamText} />
+                </div>
+              </div>
+            )}
 
             {/* Typing dots + slow-response warning */}
             {isStreaming && !currentStreamText && (
@@ -504,7 +513,7 @@ export function ChatPanel({ open, onClose, mode = 'float' }: ChatPanelProps) {
                   <div className="w-6 h-6 rounded-lg bg-[#8A7E6B] flex items-center justify-center text-white">
                     <Compass className="w-3.5 h-3.5" />
                   </div>
-                  <span className="text-[12px] font-semibold text-[#8A7E6B]">思考中</span>
+                  <span className="text-[12px] font-semibold text-[#8A7E6B]">{currentToolLabels[currentToolLabels.length - 1] || '思考中'}</span>
                 </div>
                 <div className="flex gap-[5px] px-4 py-3 bg-white/80 border border-[rgba(107,62,46,0.12)]/50 rounded-[4px_14px_14px_14px] w-fit">
                   <div className="typing-dot bg-slate-400" />
@@ -565,15 +574,6 @@ export function ChatPanel({ open, onClose, mode = 'float' }: ChatPanelProps) {
 
 /* ── Compact message bubble for panel ── */
 /* ── Result type labels ── */
-/* ── Agent role display config ── */
-const agentConfig: Record<string, { name: string; color: string }> = {
-  coach_agent:    { name: '智析教练', color: 'bg-[var(--chestnut)]' },
-  navigator:      { name: '方向顾问', color: 'bg-[#8A7E6B]' },
-  jd_agent:       { name: '匹配分析师', color: 'bg-[#8A7E6B]' },
-  profile_agent:  { name: '画像顾问', color: 'bg-[#8A7E6B]' },
-  growth_agent:   { name: '成长顾问', color: 'bg-[#8A7E6B]' },
-  report_agent:   { name: '报告分析师', color: 'bg-[#8A7E6B]' },
-}
 
 const resultTypeLabel: Record<string, string> = {
   jd_diagnosis: 'JD 诊断',
@@ -607,75 +607,6 @@ function ActionCard({ card, onClick }: { card: CardData; onClick: () => void }) 
       </div>
     </button>
   )
-}
-
-/* ── Market Signal Cards ── */
-function MarketCards({ cards }: { cards: MarketCardData[] }) {
-  const navigate = useNavigate()
-
-  const cfg: Record<string, { icon: string; border: string; bg: string; badge: string; text: string }> = {
-    best:    { icon: '✅', border: 'border-[rgba(107,62,46,0.12)]', bg: 'bg-white/60', badge: 'bg-white/80 text-[#6B5E4F]', text: 'text-[#8A7E6B]' },
-    good:    { icon: '✓',  border: 'border-[rgba(107,62,46,0.12)]', bg: 'bg-white/60', badge: 'bg-white/80 text-[#6B5E4F]', text: 'text-[#8A7E6B]' },
-    neutral: { icon: '→',  border: 'border-[rgba(107,62,46,0.12)]', bg: 'bg-white/60', badge: 'bg-white/80 text-[#6B5E4F]', text: 'text-[#8A7E6B]' },
-    caution: { icon: '⚠️', border: 'border-[rgba(107,62,46,0.12)]', bg: 'bg-white/60', badge: 'bg-white/80 text-[#6B5E4F]', text: 'text-[#8A7E6B]' },
-    no_data: { icon: '—',  border: 'border-[rgba(107,62,46,0.12)]', bg: 'bg-white/60', badge: 'bg-white/80 text-[#8A7E6B]', text: 'text-[#A89B8C]' },
-  }
-
-  return (
-    <div className="mt-3 pt-3 border-t border-[rgba(107,62,46,0.08)]">
-      <div className="text-[10px] text-[#A89B8C] mb-2 flex items-center gap-1">
-        <span>系统市场数据</span>
-        <span>·</span>
-        <span>2021→2024 年真实招聘趋势</span>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {cards.map(card => {
-          const c = cfg[card.timing] ?? cfg.neutral
-          const demandSign = card.demand_change_pct >= 0 ? '▲' : '▼'
-          const salarySign = card.salary_cagr >= 0 ? '+' : ''
-          return (
-            <div
-              key={card.family}
-              className={`flex-1 min-w-[130px] max-w-[180px] rounded-lg border ${c.border} ${c.bg} p-2.5 ${card.node_id ? 'cursor-pointer hover:shadow-sm' : ''} transition-shadow`}
-              onClick={() => card.node_id && navigate(`/roles/${encodeURIComponent(card.node_id)}`)}
-            >
-              <div className="flex items-start justify-between gap-1 mb-2">
-                <span className="font-medium text-xs text-[#3D352E] leading-tight">{card.family}</span>
-                <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${c.badge}`}>{c.icon}</span>
-              </div>
-              <div className="space-y-1">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-[#A89B8C]">市场需求</span>
-                  <span className={`font-medium ${card.demand_change_pct >= 0 ? 'text-[var(--chestnut)]' : 'text-red-500'}`}>
-                    {demandSign} {Math.abs(card.demand_change_pct).toFixed(0)}%
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-[#A89B8C]">薪资趋势</span>
-                  <span className={`font-medium ${card.salary_cagr >= 3 ? 'text-[var(--chestnut)]' : card.salary_cagr >= 0 ? 'text-[#8A7E6B]' : 'text-red-500'}`}>
-                    {salarySign}{card.salary_cagr.toFixed(0)}%/年
-                  </span>
-                </div>
-              </div>
-              {card.role_examples && card.role_examples.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {card.role_examples.map(r => (
-                    <span key={r} className="text-[9px] px-1 py-0.5 bg-white/70 rounded text-[#8A7E6B] border border-[rgba(107,62,46,0.12)]">{r}</span>
-                  ))}
-                </div>
-              )}
-              {card.node_id && (
-                <div className="mt-1.5 text-[10px] text-[#A89B8C]">查看详情 →</div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-
-  if (isPanel) return panel
-  return createPortal(panel, document.body)
 }
 
 /* ── JD Search Result Cards ── */
@@ -732,11 +663,7 @@ function JdSearchCards({ cards, onDiagnose }: { cards: JdCardData[]; onDiagnose:
       ))}
     </div>
   )
-
-  if (isPanel) return panel
-  return createPortal(panel, document.body)
 }
-
 
 /* ── Slow Response Hint ── */
 function SlowResponseHint({ isStreaming }: { isStreaming: boolean }) {
@@ -857,15 +784,13 @@ function PanelBubble({
     )
   }
 
-  const agentCfg = agentConfig[message.agent ?? ''] ?? agentConfig.coach_agent
-
   return (
     <div className="mb-4 group message-enter">
       <div className="flex items-center gap-2 mb-1.5">
-        <div className={`w-6 h-6 rounded-lg ${agentCfg.color} flex items-center justify-center text-white`}>
+        <div className="w-6 h-6 rounded-lg bg-[var(--chestnut)] flex items-center justify-center text-white">
           <Compass className="w-3.5 h-3.5" />
         </div>
-        <span className="text-[12px] font-semibold text-[#8A7E6B]">{agentCfg.name}</span>
+        <span className="text-[12px] font-semibold text-[#8A7E6B]">智析教练</span>
         {onTTSToggle && (
           <button
             onClick={() => onTTSToggle(message.id, message.text)}
@@ -887,11 +812,36 @@ function PanelBubble({
       {message.card && onCardClick && (
         <ActionCard card={message.card} onClick={() => onCardClick(message.card!)} />
       )}
+      {message.actionTaken && message.actionTaken.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {message.actionTaken.map((a, i) => (
+            <span
+              key={i}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium
+                         text-emerald-700 bg-emerald-50 border border-emerald-200"
+            >
+              <CheckCircle2 className="w-3 h-3" />
+              {a.label}
+            </span>
+          ))}
+        </div>
+      )}
+      {message.suggestions && message.suggestions.length > 0 && onFollowUp && (
+        <div className="flex flex-wrap gap-1.5 mt-2">
+          {message.suggestions.map((s, i) => (
+            <button
+              key={i}
+              onClick={() => onFollowUp(s.prompt)}
+              className="px-2.5 py-1 rounded-lg text-[11px] font-medium text-[#6B5E4F]
+                         bg-white/50 hover:bg-white/70 border border-white/40 transition-colors cursor-pointer"
+            >
+              {s.prompt}
+            </button>
+          ))}
+        </div>
+      )}
       {message.jdCards && message.jdCards.length > 0 && onJdDiagnose && (
         <JdSearchCards cards={message.jdCards} onDiagnose={onJdDiagnose} />
-      )}
-      {message.marketCards && message.marketCards.length > 0 && (
-        <MarketCards cards={message.marketCards} />
       )}
       {/* Follow-up chips after JD diagnosis */}
       {message.card?.type === 'jd_diagnosis' && onFollowUp && (
@@ -914,7 +864,4 @@ function PanelBubble({
       )}
     </div>
   )
-
-  if (isPanel) return panel
-  return createPortal(panel, document.body)
 }

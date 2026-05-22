@@ -12,7 +12,7 @@ from backend2.core.security import (
     verify_password,
 )
 from backend2.db.session import get_db
-from backend.models import User
+from core.models import User
 
 router = APIRouter()
 
@@ -51,7 +51,7 @@ def login(req: AuthRequest, db: Session = Depends(get_db)):
     return _ok({"token": token, "user": {"id": user.id, "username": user.username}})
 
 
-from backend.services.growth.stage import determine_stage
+from core.services.growth.stage import determine_stage
 
 
 @router.get("/me/stage")

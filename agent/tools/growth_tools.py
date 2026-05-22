@@ -1,23 +1,23 @@
-"""成长追踪工具 — GrowthAgent 使用的 @tool 函数。"""
+"""单 Agent 使用的成长记录查询工具。"""
 from __future__ import annotations
 
 from contextvars import ContextVar
 
 from langchain_core.tools import tool
 
-# Injected by supervisor before calling growth_agent
+# 由 runner 在调用 agent 前注入
 _injected_user_id: ContextVar[int | None] = ContextVar('_growth_user_id', default=None)
 
 
 @tool
 def get_dashboard_stats(profile_id: int) -> str:
-    """仪表盘数据：获取用户的学习进度、诊断次数、连续天数等仪表盘统计信息。"""
+    """获取用户的学习进度、诊断次数、连续天数等仪表盘统计。"""
     if not profile_id:
         return "需要提供画像ID才能查询仪表盘数据。"
 
     try:
-        from backend.db import SessionLocal
-        from backend.services.dashboard_service import get_dashboard_stats as _get_stats
+        from core.db import SessionLocal
+        from core.services.dashboard_service import get_dashboard_stats as _get_stats
 
         db = SessionLocal()
         try:
@@ -46,96 +46,15 @@ def get_dashboard_stats(profile_id: int) -> str:
 
 
 @tool
-def recommend_next_step(profile_id: int) -> str:
-    """推荐下一步：根据用户当前阶段和进度，推荐最适合的下一步行动。"""
-    if not profile_id:
-        return "需要提供画像ID才能推荐下一步。"
-
-    try:
-        from backend.db import SessionLocal
-        from backend.services.dashboard_service import recommend_next_step as _recommend
-
-        db = SessionLocal()
-        try:
-            result = _recommend(profile_id, db)
-        finally:
-            db.close()
-    except ValueError as e:
-        return f"{e}。请先创建画像。"
-    except Exception as e:
-        return f"分析下一步时出错：{e}"
-
-    header = f"当前阶段: {result['stage_label']}\n\n推荐下一步行动：\n"
-    numbered = [f"{i + 1}. {r}" for i, r in enumerate(result["recommendations"])]
-    return header + "\n".join(numbered)
-
-
-@tool
-def get_interview_records(company: str = "") -> str:
-    """查询用户的面试记录，包括每轮题目、回答要点和 AI 复盘。
-    可按公司名过滤。当用户问"我的面试"、"某家公司的面试情况"、"面试表现"时调用。
-    """
-    user_id = _injected_user_id.get()
-    if not user_id:
-        return "无法获取用户信息。"
-
-    try:
-        from backend.db import SessionLocal
-        from backend.models import InterviewRecord
-
-        db = SessionLocal()
-        try:
-            q = db.query(InterviewRecord).filter_by(user_id=user_id)
-            if company:
-                q = q.filter(InterviewRecord.company.contains(company))
-            records = q.order_by(InterviewRecord.created_at.desc()).limit(8).all()
-        finally:
-            db.close()
-    except Exception as e:
-        return f"查询面试记录时出错：{e}"
-
-    if not records:
-        return f"没有找到{'「' + company + '」的' if company else ''}面试记录。"
-
-    lines = [f"面试记录（{len(records)} 轮）：\n"]
-    rating_map = {"good": "发挥好", "medium": "正常", "bad": "较差"}
-
-    for r in records:
-        rating = rating_map.get(r.self_rating or "", "")
-        date_str = r.interview_at or (r.created_at.strftime("%m/%d") if r.created_at else "")
-        header = f"【{r.company} · {r.round}】{' · ' + rating if rating else ''} ({date_str})"
-        lines.append(header)
-
-        # Q/A summary (first 2 questions)
-        content = r.content_summary or ""
-        import re
-        questions = re.findall(r'Q\d+:\s*(.+?)(?=\nA\d+:|\nQ\d+:|$)', content, re.DOTALL)
-        for i, q_text in enumerate(questions[:2]):
-            lines.append(f"  Q{i+1}: {q_text.strip()[:60]}{'…' if len(q_text.strip()) > 60 else ''}")
-
-        # AI analysis summary
-        if r.ai_analysis:
-            overall = r.ai_analysis.get("overall", "")
-            if overall:
-                lines.append(f"  AI复盘: {overall[:80]}{'…' if len(overall) > 80 else ''}")
-
-        lines.append("")
-
-    return "\n".join(lines)
-
-
-@tool
 def get_project_progress(project_name: str = "") -> str:
-    """查询用户的项目进展记录。可按项目名过滤，不传则返回所有进行中的项目的最新进展。
-    当用户问"我的项目"、"项目进展"、"某个项目做得怎样"时调用。
-    """
+    """查询用户的项目进展记录。可按项目名过滤，不传则返回所有进行中项目的最新进展。"""
     user_id = _injected_user_id.get()
     if not user_id:
         return "无法获取用户信息。"
 
     try:
-        from backend.db import SessionLocal
-        from backend.models import ProjectRecord, ProjectLog
+        from core.db import SessionLocal
+        from core.models import ProjectRecord, ProjectLog
 
         db = SessionLocal()
         try:

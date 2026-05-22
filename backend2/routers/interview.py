@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from backend2.core.security import get_current_user
 from backend2.db.session import get_db
-from backend.models import (
+from core.models import (
     CareerGoal,
     JobApplication,
     JDDiagnosis,
@@ -425,7 +425,7 @@ def start_interview(
 
     def _legacy_generate():
         """Fallback to generic mock-interview-gen skill."""
-        from backend.skills import invoke_skill
+        from core.skills import invoke_skill
         return invoke_skill(
             "mock-interview-gen",
             target_role=req.target_role,
@@ -471,7 +471,7 @@ def start_interview(
         # ── Step 2: If bank insufficient, generate via LLM ──
         if questions is None:
             try:
-                from backend.services.interview.skill_loader import build_prompt
+                from core.services.interview.skill_loader import build_prompt
                 system_prompt, user_prompt = build_prompt(
                     skill_id=skill_id,
                     resume_text=profile_summary,
@@ -485,7 +485,7 @@ def start_interview(
                     type_distribution=type_distribution,
                 )
 
-                from backend.llm import get_llm_client, get_model
+                from core.llm import get_llm_client, get_model
                 resp = get_llm_client(timeout=120).chat.completions.create(
                     model=get_model("strong"),
                     messages=[
@@ -654,7 +654,7 @@ def generate_follow_up(
     follow_up_text = ""
     should_stop = False
     try:
-        from backend.skills import invoke_skill
+        from core.skills import invoke_skill
 
         result = invoke_skill(
             "mock-interview-followup",
@@ -750,7 +750,7 @@ def submit_answers(
     profile_data = json.loads(profile.profile_json or "{}") if profile else {}
     profile_summary = _build_profile_summary(profile_data)
 
-    from backend.skills import invoke_skill
+    from core.skills import invoke_skill
     evaluation = invoke_skill(
         "mock-interview-eval",
         target_role=row.target_role,

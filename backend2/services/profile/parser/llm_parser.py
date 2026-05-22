@@ -78,7 +78,7 @@ def _parse_main(document: ResumeDocument, evidence: dict | None = None) -> LLMPa
         evidence_section=evidence_str,
     )
 
-    llm_model = os.getenv("LLM_MODEL", "qwen-plus")
+    llm_model = os.getenv("LLM_MODEL", "deepseek-v4-flash")
     json_repaired = False
 
     for attempt in range(1, _MAX_RETRIES + 1):

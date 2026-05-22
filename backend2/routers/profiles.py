@@ -14,7 +14,7 @@ import logging
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from backend.models import User
+from core.models import User
 from backend2.core.security import get_current_user
 from backend2.db.session import get_db
 from backend2.schemas.profile import (

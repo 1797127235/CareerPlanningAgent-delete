@@ -9,8 +9,8 @@
 import json, os, sys, random
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from datetime import datetime, timedelta
-from backend.db import SessionLocal
-from backend.models import (
+from core.db import SessionLocal
+from core.models import (
     User, Profile, CareerGoal, ProjectRecord, ProjectLog,
     InterviewRecord, JobApplication, GrowthEntry, GrowthSnapshot, SkillUpdate,
 )

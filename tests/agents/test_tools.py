@@ -1,44 +1,49 @@
-"""Test that tools are importable and have correct signatures."""
+"""Tests for the current single-agent surface area."""
 from __future__ import annotations
 
-import pytest
+from typing import cast
+
+from langchain_core.messages import HumanMessage
 from langchain_core.tools import BaseTool
 
 
-class TestToolImports:
-    def test_graph_tools_importable(self):
-        from agent.tools.graph_tools import get_escape_routes, get_job_detail, search_jobs
+class TestRegistry:
+    def test_registry_contains_expected_tools(self):
+        from agent.tools.registry import ALL_TOOLS
 
-        assert isinstance(search_jobs, BaseTool)
-        assert isinstance(get_job_detail, BaseTool)
-        assert isinstance(get_escape_routes, BaseTool)
+        names = {tool.name for tool in ALL_TOOLS}
+        assert names == {
+            "get_user_profile",
+            "get_career_goal",
+            "get_recommended_roles",
+            "get_market_signal",
+            "get_memory_recall",
+            "get_job_detail",
+            "search_jobs",
+            "get_dashboard_stats",
+            "get_project_progress",
+            "search_real_jd",
+            "diagnose_jd",
+            "add_growth_entry",
+            "set_career_goal",
+            "track_application",
+        }
+        assert all(isinstance(tool, BaseTool) for tool in ALL_TOOLS)
 
-    def test_profile_tools_importable(self):
-        from agent.tools.profile_tools import get_user_profile, locate_on_graph, score_profile
 
-        assert isinstance(locate_on_graph, BaseTool)
-        assert isinstance(get_user_profile, BaseTool)
-        assert isinstance(score_profile, BaseTool)
+class TestAgentCreation:
+    def test_create_agent(self):
+        from agent.agent import create_agent
 
-    def test_jd_tools_importable(self):
-        from agent.tools.jd_tools import diagnose_jd, get_jd_history
+        agent = create_agent()
+        assert agent is not None
 
-        assert isinstance(diagnose_jd, BaseTool)
-        assert isinstance(get_jd_history, BaseTool)
+    def test_runner_singleton(self):
+        from agent.runner import _get_agent
 
-    @pytest.mark.skip(reason="practice agent module removed in redesign")
-    def test_practice_tools_importable(self):
-        from agent.tools.practice_tools import evaluate_answer, list_question_tags, pick_question
-
-        assert isinstance(pick_question, BaseTool)
-        assert isinstance(evaluate_answer, BaseTool)
-        assert isinstance(list_question_tags, BaseTool)
-
-    def test_growth_tools_importable(self):
-        from agent.tools.growth_tools import get_dashboard_stats, recommend_next_step
-
-        assert isinstance(get_dashboard_stats, BaseTool)
-        assert isinstance(recommend_next_step, BaseTool)
+        first = _get_agent()
+        second = _get_agent()
+        assert first is second
 
 
 class TestToolExecution:
@@ -52,106 +57,38 @@ class TestToolExecution:
     def test_get_job_detail_known(self):
         from agent.tools.graph_tools import get_job_detail
 
-        # Use a label that exists in the graph
         result = get_job_detail.invoke({"job_name": "Java后端工程师"})
         assert isinstance(result, str)
+        assert "Java后端工程师" in result or "未找到" in result
 
-    def test_escape_routes_empty_node(self):
-        from agent.tools.graph_tools import get_escape_routes
 
-        result = get_escape_routes.invoke({"node_id": ""})
-        assert "定位" in result or "未找到" in result
+class TestContextSummary:
+    def test_build_context_summary_for_early_turn(self):
+        from agent.context import build_context_summary
+        from agent.state import CareerState
 
-    def test_diagnose_jd_returns_string(self):
-        import json
-
-        from agent.tools.jd_tools import diagnose_jd
-
-        profile = json.dumps({"skills": [{"name": "Python"}, {"name": "SQL"}]})
-        result = diagnose_jd.invoke({
-            "jd_text": "要求熟悉Python和Java，有MySQL经验",
-            "profile_json": profile,
+        state = cast(CareerState, {
+            "messages": [HumanMessage(content="你好")],
+            "user_stage": "exploring",
+            "user_profile": {
+                "skills": [{"name": "Python", "level": "advanced"}],
+                "education": {"degree": "本科", "major": "计算机"},
+            },
+            "recommended_labels": ["后端开发"],
         })
-        assert isinstance(result, str)
-        assert "匹配度" in result or "出错" in result
+        summary = build_context_summary(state)
 
-    def test_diagnose_jd_empty_jd(self):
-        from agent.tools.jd_tools import diagnose_jd
-
-        result = diagnose_jd.invoke({"jd_text": "", "profile_json": "{}"})
-        assert "JD" in result or "请提供" in result
-
-    def test_locate_on_graph_returns_string(self):
-        import json
-
-        from agent.tools.profile_tools import locate_on_graph
-
-        profile = json.dumps({
-            "skills": [{"name": "Python"}, {"name": "Django"}],
-            "projects": [{"name": "Web项目", "description": "后端开发"}],
-        })
-        result = locate_on_graph.invoke({"profile_json": profile})
-        assert isinstance(result, str)
-        assert "匹配" in result or "定位" in result or "出错" in result
-
-    def test_locate_on_graph_bad_json(self):
-        from agent.tools.profile_tools import locate_on_graph
-
-        result = locate_on_graph.invoke({"profile_json": "not-json"})
-        assert "格式错误" in result
-
-    def test_recommend_next_step_returns_string(self):
-        from agent.tools.growth_tools import recommend_next_step
-
-        # Use a non-existent profile_id; should still return a string
-        result = recommend_next_step.invoke({"profile_id": 99999})
-        assert isinstance(result, str)
-
-
-class TestAgentCreation:
-    def test_create_profile_agent(self):
-        from agent.agents.profile_agent import create_profile_agent
-
-        agent = create_profile_agent()
-        assert agent is not None
-
-    def test_create_navigator_agent(self):
-        from agent.agents.navigator_agent import create_navigator_agent
-
-        agent = create_navigator_agent()
-        assert agent is not None
-
-    def test_create_jd_agent(self):
-        from agent.agents.jd_agent import create_jd_agent
-
-        agent = create_jd_agent()
-        assert agent is not None
-
-    @pytest.mark.skip(reason="practice agent module removed in redesign")
-    def test_create_practice_agent(self):
-        from agent.agents.practice_agent import create_practice_agent
-
-        agent = create_practice_agent()
-        assert agent is not None
-
-    def test_create_growth_agent(self):
-        from agent.agents.growth_agent import create_growth_agent
-
-        agent = create_growth_agent()
-        assert agent is not None
+        assert "当前阶段" in summary
+        assert "画像：已建立" in summary
+        assert "Python" in summary
 
 
 class TestState:
-    def test_career_state_type(self):
+    def test_career_state_annotations_match_current_shape(self):
         from agent.state import CareerState
 
-        # TypedDict should be usable as a type annotation
-        assert CareerState is not None
-        # Check that the expected keys are in the annotations
         annotations = CareerState.__annotations__
         assert "messages" in annotations
-        assert "current_agent" in annotations
-        assert "agent_queue" in annotations
         assert "user_id" in annotations
         assert "profile_id" in annotations
         assert "user_profile" in annotations
@@ -159,4 +96,8 @@ class TestState:
         assert "current_node_id" in annotations
         assert "user_stage" in annotations
         assert "last_diagnosis" in annotations
-        assert "_profile_dirty" in annotations
+        assert "coach_memo" in annotations
+        assert "page_context" in annotations
+        assert "tool_hint" in annotations
+        assert "last_active_agent" in annotations
+        assert "growth_context" in annotations

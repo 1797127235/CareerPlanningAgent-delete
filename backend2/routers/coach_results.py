@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from backend2.core.security import get_current_user
 from backend2.db.session import get_db
-from backend.models import CoachResult, User
+from core.models import CoachResult, User
 
 router = APIRouter()
 

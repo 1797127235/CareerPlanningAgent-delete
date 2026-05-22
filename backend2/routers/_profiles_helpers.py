@@ -5,8 +5,8 @@ import json
 
 from sqlalchemy.orm import Session
 
-from backend.models import CareerGoal, JobNode, Profile
-from backend.services.profile.merge import (
+from core.models import CareerGoal, JobNode, Profile
+from core.services.profile.merge import (
     merge_profiles,
     merge_skills,
     execute_profile_reset,
@@ -32,7 +32,7 @@ def _get_or_create_profile(user_id: int, db: Session) -> Profile:
 
 def _resolve_node_label(node_id: str, db: Session) -> str:
     """Resolve node label: try graph service first, then DB, then raw ID."""
-    from backend.services.graph import get_graph_service
+    from core.services.graph import get_graph_service
     g = get_graph_service(db)
     gn = g.get_node(node_id)
     if gn:

@@ -71,6 +71,7 @@ def save_profile(
 
     # 用 confirmed_profile 重新计算 quality（覆盖 meta 里的 score）
     from backend2.services.profile.parser.quality import score_profile
+    from core.services.coach.memory import seed_profile_memory
 
     quality_meta = score_profile(confirmed_profile)
     meta_json["quality_score"] = quality_meta.quality_score
@@ -125,6 +126,15 @@ def save_profile(
             user_id, profile.id, parse_snapshot.id, is_edited,
         )
 
+        # 同步画像种子到 Mem0（后台线程，不阻塞响应）
+        import threading
+        profile_seed = confirmed_profile.model_dump(mode="json")
+        threading.Thread(
+            target=seed_profile_memory,
+            args=(user_id, profile_seed),
+            daemon=True,
+        ).start()
+
         return SaveProfileResponse(
             profile_id=profile.id,
             parse_id=parse_snapshot.id,
@@ -140,11 +150,32 @@ def get_my_profile(db: Session, user_id: int) -> MyProfileResponse:
 
     优先从 active_parse 取 confirmed_profile_json（v2 原始格式），
     无快照时从 profiles.profile_json 降级返回。
+    同时合并 CareerGoal 目标方向到画像层。
     """
     from backend2.services.profile.resolver import resolve_profile_context
+    from core.models import CareerGoal
 
     profile_data, _profile_id, _parse_id = resolve_profile_context(db, user_id)
     profile_row = repo.get_profile(db, user_id)
+
+    # 合并目标方向（同 hydrate_state 逻辑）
+    goal = (
+        db.query(CareerGoal)
+        .filter(
+            CareerGoal.user_id == user_id,
+            CareerGoal.is_active.is_(True),
+            CareerGoal.target_node_id != "",
+        )
+        .order_by(CareerGoal.set_at.desc())
+        .first()
+    )
+    if goal:
+        profile_data.career_goal = {
+            "label": goal.target_label,
+            "node_id": goal.target_node_id,
+            "zone": goal.target_zone,
+        }
+
     return MyProfileResponse(
         profile=profile_data,
         source=profile_row.source if profile_row else "",
@@ -195,6 +226,15 @@ def patch_profile_data(
     db.refresh(profile)
 
     logger.info("画像局部更新: user_id=%d, fields=%s", user_id, list(patch_dict.keys()))
+
+    # 同步更新后的画像种子到 Mem0
+    import threading
+    threading.Thread(
+        target=seed_profile_memory,
+        args=(user_id, current_json),
+        daemon=True,
+    ).start()
+
     return ProfileData.model_validate(current_json)
 
 

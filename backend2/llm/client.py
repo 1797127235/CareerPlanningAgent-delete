@@ -47,10 +47,14 @@ def get_llm_client(timeout: int = 30):
 
     环境变量:
         LLM_BASE_URL — 默认使用 DashScope 兼容端点
-        DASHSCOPE_API_KEY — 必须；OPENAI_API_KEY 作为备选
+        DASHSCOPE_API_KEY — DashScope provider key
+        OPENAI_API_KEY    — OpenAI / DeepSeek provider key
     """
     base_url = _get_env("LLM_BASE_URL", _DEFAULT_BASE_URL)
-    api_key = _get_env("DASHSCOPE_API_KEY") or _get_env("OPENAI_API_KEY") or "sk-placeholder"
+    if "deepseek" in base_url.lower():
+        api_key = _get_env("OPENAI_API_KEY") or _get_env("DASHSCOPE_API_KEY") or "sk-placeholder"
+    else:
+        api_key = _get_env("DASHSCOPE_API_KEY") or _get_env("OPENAI_API_KEY") or "sk-placeholder"
     return _cached_client(base_url, api_key, timeout)
 
 
@@ -113,7 +117,7 @@ def llm_chat(
         return ""
 
     if model is None:
-        model = _get_env("LLM_MODEL", "qwen-plus")
+        model = _get_env("LLM_MODEL", "deepseek-v4-flash")
 
     client = get_llm_client(timeout=timeout)
 

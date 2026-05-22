@@ -18,11 +18,11 @@ from sqlalchemy.orm import Session
 
 from backend2.core.security import get_current_user
 from backend2.db.session import get_db
-from backend.models import SjtSession, User
+from core.models import SjtSession, User
 from backend2.routers._profiles_helpers import _get_or_create_profile, _load_profile_json
-from backend.services.profile import ProfileService
-from backend.services.profile.sjt import score_to_level
-from backend.utils import ok
+from core.services.profile import ProfileService
+from core.services.profile.sjt import score_to_level
+from core.utils import ok
 
 logger = logging.getLogger(__name__)
 

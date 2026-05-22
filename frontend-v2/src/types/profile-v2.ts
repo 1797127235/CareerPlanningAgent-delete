@@ -62,6 +62,11 @@ export interface V2ProfileData {
   weaknesses?: string[]
   constraints?: V2Constraint[]
   preferences?: V2Preference[]
+  career_goal?: {
+    label: string
+    node_id: string
+    zone: string
+  } | null
 }
 
 export interface V2ResumeDocument {

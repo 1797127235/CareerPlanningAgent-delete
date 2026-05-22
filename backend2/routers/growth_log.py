@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from backend2.core.security import get_current_user
 from backend2.db.session import get_db
-from backend.models import (
+from core.models import (
     GrowthEntry,
     InterviewRecord,
     Profile,
@@ -18,9 +18,9 @@ from backend.models import (
     ProjectRecord,
     User,
 )
-from backend.services.growth.dashboard import build_growth_dashboard
-from backend.services.growth.insights import build_growth_insights_with_profile
-from backend.services.growth.service import generate_interview_analysis
+from core.services.growth.dashboard import build_growth_dashboard
+from core.services.growth.insights import build_growth_insights_with_profile
+from core.services.growth.service import generate_interview_analysis
 
 logger = logging.getLogger(__name__)
 
@@ -586,7 +586,7 @@ def suggest_answer_for_question(
     )
 
     try:
-        from backend.llm import get_llm_client, get_model
+        from core.llm import get_llm_client, get_model
         resp = get_llm_client(timeout=45).chat.completions.create(
             model=get_model("fast"),
             messages=[
@@ -769,8 +769,8 @@ def ai_suggest(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    from backend.skills import invoke_skill
-    from backend.models import CareerGoal
+    from core.skills import invoke_skill
+    from core.models import CareerGoal
 
     entry = db.query(GrowthEntry).filter(
         GrowthEntry.id == entry_id, GrowthEntry.user_id == user.id

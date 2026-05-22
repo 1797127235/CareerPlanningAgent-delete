@@ -11,14 +11,14 @@ from sqlalchemy.orm import Session
 
 from backend2.core.security import get_current_user
 from backend2.db.session import get_db
-from backend.models import (
+from core.models import (
     InterviewDebrief,
     JDDiagnosis,
     JobApplication,
     Profile,
     User,
 )
-from backend.services.interview.debrief import DebriefService
+from core.services.interview.debrief import DebriefService
 
 router = APIRouter()
 _debrief_svc = DebriefService()
@@ -294,7 +294,7 @@ def delete_application(
     if not app:
         raise HTTPException(404, "投递记录不存在")
     # 级联删除：关联面试记录 + debrief
-    from backend.models import InterviewRecord as IR
+    from core.models import InterviewRecord as IR
     db.query(IR).filter(IR.application_id == app_id).delete()
     db.query(InterviewDebrief).filter(InterviewDebrief.application_id == app_id).delete()
     db.delete(app)

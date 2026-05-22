@@ -215,7 +215,7 @@ def resolve_direction_ranked(query: str) -> tuple[Optional[str], str]:
     置信度：
       exact       用户直接说了某 family 名
       alias       别名表直中
-      node_id     node_id 匹配（e.g. supervisor context 传的）
+      node_id     node_id 匹配（例如运行时上下文直接传的 node_id）
       graph_label node 的 label_cn/label 匹配（e.g. "工程经理"→engineering-manager→管理）
       substring   家族名子串唯一命中
       heuristic   关键词兜底（有方向但不在已知数据的映射）
@@ -302,7 +302,7 @@ def get_signal_for_node(node_id: str) -> Optional[dict]:
     """严格按 node_id 查，miss 返回 None。
 
     和 get_signal 不同，这里 miss 不走 heuristic/fallback——因为 node_id 是内部 ID，
-    不是用户输入，garbage 进来时不该伪造数据污染 supervisor 上下文。
+    不是用户输入，garbage 进来时不该伪造数据污染运行时上下文。
     """
     if not node_id:
         return None

@@ -17,13 +17,17 @@ import {
   Heart,
   Shield,
   ShieldCheck,
+  ArrowUpRight,
+  Compass,
 } from 'lucide-react'
 import type { V2ProfileData, V2Education, V2Project } from '@/types/profile-v2'
 import type { Skill, Internship } from '@/types/profile'
 import { EducationEditForm } from './edits/EducationEditForm'
 import { SkillsEditForm } from './edits/SkillsEditForm'
-import { InternshipsEditForm } from './edits/InternshipsEditForm'
+  import { InternshipsEditForm } from './edits/InternshipsEditForm'
 import { ProjectsEditForm } from './edits/ProjectsEditForm'
+import { RecommendationCard } from './cards/RecommendationCard'
+import type { Recommendation } from './cards/RecommendationCard'
 
 /* ── Design Tokens ── */
 const serif = { fontFamily: 'var(--font-serif), Georgia, "Noto Serif SC", serif' }
@@ -96,24 +100,32 @@ interface Props {
   profile: V2ProfileData
   source?: string
   updatedAt?: string
+  recommendations?: Recommendation[]
   onDelete?: () => Promise<void>
   onSaveEducation?: (data: V2Education) => Promise<void>
   onSaveSkills?: (data: Skill[]) => Promise<void>
   onSaveInternships?: (data: Internship[]) => Promise<void>
   onSaveProjects?: (data: V2Project[]) => Promise<void>
   onOpenEdit?: () => void
+  onExploreRec?: (rec: Recommendation) => void
+  onRegenerateRecs?: () => Promise<void>
+  regeneratingRecs?: boolean
 }
 
 export default function ProfileReadonlyView({
   profile,
   source = 'resume',
   updatedAt,
+  recommendations = [],
   onDelete,
   onSaveEducation,
   onSaveSkills,
   onSaveInternships,
   onSaveProjects,
   onOpenEdit,
+  onExploreRec,
+  onRegenerateRecs,
+  regeneratingRecs = false,
 }: Props) {
   /* ── Edit modal state ── */
   const [editEdu, setEditEdu] = useState(false)
@@ -260,6 +272,12 @@ export default function ProfileReadonlyView({
               {firstEdu.major && ` · ${firstEdu.major}`}
             </span>
           )}
+          {profile.career_goal?.label && (
+            <span className="inline-flex items-center gap-1">
+              <Compass className="w-3.5 h-3.5" />
+              目标：{profile.career_goal.label}
+            </span>
+          )}
           <span className="inline-flex items-center gap-1">
             <Sparkles className="w-3.5 h-3.5" />
             {source === 'resume' ? '基于简历解析' : '手动创建'}
@@ -367,8 +385,72 @@ export default function ProfileReadonlyView({
         </motion.section>
       )}
 
-      {/* ── Skills ── */}
+      {/* ── Recommended Directions ── */}
       <motion.section custom={4} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
+        <SectionTitle>
+          <span className="inline-flex items-center gap-2">
+            <Compass className="w-4 h-4" style={{ color: ink(3) }} />
+            推荐方向
+          </span>
+        </SectionTitle>
+        {recommendations.length > 0 ? (
+          <>
+            <div className="space-y-3">
+              {recommendations.slice(0, 4).map((rec) => (
+                <RecommendationCard
+                  key={rec.role_id}
+                  rec={rec}
+                  onExplore={() => onExploreRec?.(rec)}
+                />
+              ))}
+            </div>
+            {recommendations.length > 4 && (
+              <p className="mt-3 text-[12px] text-[var(--ink-3)]">
+                还有 {recommendations.length - 4} 个方向，点击查看全部
+              </p>
+            )}
+          </>
+        ) : (
+          <Card>
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-[var(--bg-paper)] border border-[var(--line)] flex items-center justify-center shrink-0">
+                <Compass className="w-4 h-4" style={{ color: ink(3) }} />
+              </div>
+              <div className="flex-1">
+                <p className="text-[13px] font-medium" style={{ ...sans, color: ink(1) }}>暂无推荐方向</p>
+                <p className="text-[12px] mt-0.5" style={{ ...sans, color: ink(3) }}>
+                  系统缓存中还没有推荐数据。点击下方按钮重新计算，或去「探索」页浏览岗位图谱。
+                </p>
+                {onRegenerateRecs && (
+                  <button
+                    onClick={onRegenerateRecs}
+                    disabled={regeneratingRecs}
+                    className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-[12px] font-medium bg-[var(--chestnut)] text-white hover:opacity-90 transition-opacity active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {regeneratingRecs ? (
+                      <>
+                        <svg className="animate-spin w-3 h-3" viewBox="0 0 24 24" fill="none">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        计算中…
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3 h-3" />
+                        重新计算推荐
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+          </Card>
+        )}
+      </motion.section>
+
+      {/* ── Skills ── */}
+      <motion.section custom={5} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
         <SectionTitle
           action={onSaveSkills && (
             <button
@@ -411,7 +493,7 @@ export default function ProfileReadonlyView({
       </motion.section>
 
       {/* ── Experience Timeline ── */}
-      <motion.section custom={5} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
+      <motion.section custom={6} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-[16px] font-semibold" style={{ ...sans, color: ink(1) }}>经历与项目</h2>
           {onSaveProjects && (
@@ -547,7 +629,7 @@ export default function ProfileReadonlyView({
 
       {/* ── Awards & Certificates ── */}
       {((profile.awards?.length ?? 0) > 0 || (profile.certificates?.length ?? 0) > 0) && (
-        <motion.section custom={6} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
+        <motion.section custom={7} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
           <SectionTitle>
             <span className="inline-flex items-center gap-2">
               <Award className="w-4 h-4" style={{ color: ink(3) }} />
@@ -581,7 +663,7 @@ export default function ProfileReadonlyView({
 
       {/* ── Preferences & Constraints ── */}
       {(hasPreferences || hasConstraints) && (
-        <motion.section custom={7} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
+        <motion.section custom={8} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
           <SectionTitle>
             <span className="inline-flex items-center gap-2">
               <Heart className="w-4 h-4" style={{ color: ink(3) }} />
@@ -629,7 +711,7 @@ export default function ProfileReadonlyView({
       )}
 
       {/* ── Bottom Action Bar ── */}
-      <motion.section custom={8} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
+      <motion.section custom={9} variants={fadeUp} initial="hidden" animate="visible" className="mb-8">
         <div className="flex items-center justify-between rounded-xl border border-[var(--line)] bg-[var(--bg-card)] p-5">
           <div>
             <p className="text-[14px] font-semibold" style={{ ...sans, color: ink(1) }}>补充画像信息</p>
@@ -651,7 +733,7 @@ export default function ProfileReadonlyView({
       </motion.section>
 
       {/* ── Footer ── */}
-      <motion.footer custom={9} variants={fadeUp} initial="hidden" animate="visible">
+      <motion.footer custom={10} variants={fadeUp} initial="hidden" animate="visible">
         <p className="text-center text-[11px]" style={{ ...sans, color: ink(3) }}>
           档案仅用于系统分析，不会分享给任何第三方。
         </p>

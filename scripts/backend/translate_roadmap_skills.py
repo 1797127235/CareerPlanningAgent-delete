@@ -12,7 +12,7 @@ import json
 import time
 from pathlib import Path
 
-from backend.llm import get_llm_client, get_model
+from core.llm import get_llm_client, get_model
 
 SKILLS_PATH = Path("data/roadmap_skills.json")
 BATCH_SIZE = 15  # skills per LLM call

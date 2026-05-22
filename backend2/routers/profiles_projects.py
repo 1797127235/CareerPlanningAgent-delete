@@ -14,9 +14,9 @@ from sqlalchemy.orm import Session
 
 from backend2.core.security import get_current_user
 from backend2.db.session import get_db
-from backend.models import Profile, User
+from core.models import Profile, User
 from backend2.routers._profiles_helpers import _load_profile_json
-from backend.utils import ok
+from core.utils import ok
 
 logger = logging.getLogger(__name__)
 

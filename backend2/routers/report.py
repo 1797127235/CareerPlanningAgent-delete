@@ -17,7 +17,7 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from backend2.core.security import get_current_user
 from backend2.db.session import get_db
-from backend.models import ActionPlanV2, ActionProgress, Report, User
+from core.models import ActionPlanV2, ActionProgress, Report, User
 
 router = APIRouter()
 
@@ -102,7 +102,7 @@ def generate_report(
     db: Session = Depends(get_db),
 ):
     """Generate and persist a new career development report for the current user."""
-    from backend.services.report import generate_report as _generate
+    from core.services.report import generate_report as _generate
 
     with _generating_lock:
         _generating_users.add(user.id)
@@ -251,7 +251,7 @@ def polish_report(
     db: Session = Depends(get_db),
 ):
     """Use LLM to polish the narrative of an existing report."""
-    from backend.services.report import polish_narrative
+    from core.services.report import polish_narrative
 
     report = db.query(Report).filter(
         Report.id == report_id,
@@ -297,7 +297,7 @@ async def export_report_pdf(
         "username": user.username,
     }
 
-    from backend.services.report.pdf_export import render_report_pdf
+    from core.services.report.pdf_export import render_report_pdf
     try:
         pdf_bytes = await render_report_pdf(report_id, token, user_json)
     except Exception as e:
