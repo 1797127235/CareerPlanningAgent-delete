@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig, AbsoluteFill } from 'remotion'
 import { C, FONT } from '../tokens'
 import { GROWTH_DATA_V2 } from '../content'
 import { MiniNavbar, fadeIn, delayFrame } from '../components/UIPrimitives'
+import { SpringScaleIn, SPRING_POP } from '../components/Animations'
 
 const statusColor = (status: string) => {
   switch (status) {
@@ -91,15 +92,16 @@ const EntriesList: React.FC<{ d: typeof GROWTH_DATA_V2; frame: number; fps: numb
 }
 
 const AISuggestion: React.FC<{ d: typeof GROWTH_DATA_V2; frame: number; fps: number }> = ({ d, frame, fps }) => {
-  const visible = fadeIn(frame, fps, 8, 0.5)
   return (
-    <div style={{ backgroundColor: `${C.chestnut}08`, border: `1px solid ${C.chestnut}20`, borderRadius: 16, padding: 20, opacity: visible }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <div style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: C.chestnut, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: C.white }}>AI</div>
-        <span style={{ fontSize: 13, fontWeight: 700, color: C.chestnut, fontFamily: FONT.sans }}>智能建议</span>
+    <SpringScaleIn delay={7.5} duration={0.8} from={0.9} springConfig={SPRING_POP}>
+      <div style={{ backgroundColor: `${C.chestnut}08`, border: `1px solid ${C.chestnut}20`, borderRadius: 16, padding: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <div style={{ width: 24, height: 24, borderRadius: '50%', backgroundColor: C.chestnut, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: C.white }}>AI</div>
+          <span style={{ fontSize: 13, fontWeight: 700, color: C.chestnut, fontFamily: FONT.sans }}>智能建议</span>
+        </div>
+        <div style={{ fontSize: 13, color: C.ink, lineHeight: 1.6, fontFamily: FONT.sans }}>{d.aiSuggestion}</div>
       </div>
-      <div style={{ fontSize: 13, color: C.ink, lineHeight: 1.6, fontFamily: FONT.sans }}>{d.aiSuggestion}</div>
-    </div>
+    </SpringScaleIn>
   )
 }
 

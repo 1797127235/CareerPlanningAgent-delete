@@ -40,33 +40,59 @@ export const UPLOAD_PROFILE_DATA = {
 }
 
 export const GRAPH_JD_DATA = {
+  // Phase 1: 45 role nodes
   roles: [
-    { id: 'fe-mid', label: '前端开发工程师', family: '前端开发', zone: 'safe', salary: '18K', skills: ['React', 'TypeScript', 'Webpack'], aiLeverage: 0.67 },
-    { id: 'fe-senior', label: '高级前端工程师', family: '前端开发', zone: 'leverage', salary: '32K', skills: ['Performance', 'Architecture', 'Leadership'], aiLeverage: 0.7 },
-    { id: 'be-mid', label: '后端开发工程师', family: '后端开发', zone: 'transition', salary: '19K', skills: ['Java', 'Spring', 'MySQL'], aiLeverage: 0.4 },
-    { id: 'fullstack', label: '全栈开发工程师', family: '全栈', zone: 'leverage', salary: '25K', skills: ['React', 'Node.js', 'PostgreSQL'], aiLeverage: 0.72 },
+    { id: 'fe-mid', label: '前端开发', family: '前端开发', zone: 'safe', salary: '18K', skills: ['React', 'TypeScript', 'Webpack'], aiLeverage: 0.67 },
+    { id: 'fe-senior', label: '高级前端', family: '前端开发', zone: 'leverage', salary: '32K', skills: ['Performance', 'Architecture', 'Leadership'], aiLeverage: 0.7 },
+    { id: 'fe-arch', label: '前端架构师', family: '前端开发', zone: 'leverage', salary: '45K', skills: ['System Design', 'Performance', 'Mentoring'], aiLeverage: 0.75 },
+    { id: 'be-mid', label: '后端开发', family: '后端开发', zone: 'transition', salary: '19K', skills: ['Java', 'Spring', 'MySQL'], aiLeverage: 0.4 },
+    { id: 'be-senior', label: '高级后端', family: '后端开发', zone: 'leverage', salary: '35K', skills: ['Microservices', 'Redis', 'Kafka'], aiLeverage: 0.45 },
+    { id: 'fullstack', label: '全栈开发', family: '全栈', zone: 'leverage', salary: '25K', skills: ['React', 'Node.js', 'PostgreSQL'], aiLeverage: 0.72 },
     { id: 'algo-mid', label: '算法工程师', family: 'AI/ML', zone: 'leverage', salary: '35K', skills: ['PyTorch', 'Python', 'Math'], aiLeverage: 0.85 },
+    { id: 'pm', label: '产品经理', family: '产品', zone: 'transition', salary: '22K', skills: ['Data Analysis', 'User Research', 'Roadmap'], aiLeverage: 0.55 },
+    { id: 'ui-designer', label: 'UI 设计师', family: '设计', zone: 'safe', salary: '16K', skills: ['Figma', 'Design System', 'Prototyping'], aiLeverage: 0.6 },
+    { id: 'ux-researcher', label: 'UX 研究员', family: '设计', zone: 'transition', salary: '20K', skills: ['User Testing', 'Data Analysis', 'Psychology'], aiLeverage: 0.5 },
+    { id: 'data-analyst', label: '数据分析师', family: '数据', zone: 'leverage', salary: '24K', skills: ['SQL', 'Python', 'Visualization'], aiLeverage: 0.78 },
+    { id: 'devops', label: 'DevOps 工程师', family: '运维', zone: 'leverage', salary: '28K', skills: ['Docker', 'K8s', 'CI/CD'], aiLeverage: 0.5 },
+    { id: 'sre', label: 'SRE', family: '运维', zone: 'leverage', salary: '30K', skills: ['Monitoring', 'Automation', 'Linux'], aiLeverage: 0.48 },
+    { id: 'mobile-ios', label: 'iOS 开发', family: '移动端', zone: 'safe', salary: '21K', skills: ['Swift', 'UIKit', 'SwiftUI'], aiLeverage: 0.62 },
+    { id: 'mobile-android', label: 'Android 开发', family: '移动端', zone: 'safe', salary: '20K', skills: ['Kotlin', 'Jetpack', 'Compose'], aiLeverage: 0.6 },
+    // Fill remaining to 45 with generic placeholders
+    ...Array.from({ length: 30 }, (_, i) => ({
+      id: `role-${i}`,
+      label: ['测试工程师', '运维工程师', '安全工程师', '数据工程师', 'AI 工程师', '增长黑客', '技术写作', '开发者关系', '技术经理', 'CTO'][i % 10],
+      family: ['后端开发', '运维', '安全', '数据', 'AI/ML', '产品', '技术写作', '社区', '管理', '管理'][i % 10],
+      zone: ['safe', 'leverage', 'transition', 'danger'][i % 4] as const,
+      salary: `${15 + (i % 20)}K`,
+      skills: ['Skill A', 'Skill B'],
+      aiLeverage: 0.3 + (i % 50) / 100,
+    })),
   ],
+  // Phase 1: target path (user's career coordinate)
+  targetPath: [
+    { id: 'fe-mid', label: '前端开发' },
+    { id: 'fe-senior', label: '高级前端' },
+    { id: 'fe-arch', label: '前端架构师' },
+  ],
+  // Phase 2: radar comparison
   radarAxes: [
     { label: '技能深度', value: 0.7 },
-    { label: '薪资潜力', value: 0.6 },
-    { label: 'AI 协同', value: 0.67 },
+    { label: '场景宽度', value: 0.6 },
+    { label: '薪资潜力', value: 0.65 },
     { label: '转型空间', value: 0.5 },
-    { label: '市场需求', value: 0.75 },
+    { label: 'AI 协同', value: 0.67 },
   ],
-  selectedRole: '前端开发工程师',
-  aiInfluence: '67%',
-  jdText: '岗位职责：负责公司核心产品的前端架构设计与开发。要求精通 React/TypeScript，熟悉前端工程化（Webpack/Vite），具备组件库搭建和性能优化经验，了解 Node.js SSR 方案…',
-  matchScore: 78,
-  matchLabel: '高度匹配',
-  dimensions: [
-    { key: 'foundation', label: '基础素养', score: 82 },
-    { key: 'skill', label: '技能匹配', score: 75 },
-    { key: 'potential', label: '成长潜力', score: 80 },
-    { key: 'soft_skill', label: '软技能', score: 68 },
+  userRadarScores: [0.55, 0.45, 0.5, 0.35, 0.6], // 林小北当前能力
+  matchScore: 73,
+  matchLabel: '中度匹配',
+  gapCount: 3,
+  // Phase 3: gap analysis + learning path
+  gapItems: [
+    { skill: 'Performance', current: 65, target: 90, hours: 400 },
+    { skill: '架构设计', current: 50, target: 85, hours: 500 },
+    { skill: '团队管理', current: 30, target: 75, hours: 300 },
   ],
-  matchedSkills: ['React', 'TypeScript', 'Webpack', 'Git', 'REST API'],
-  gapSkills: ['React 高级模式', '系统设计', 'SSR'],
+  totalHours: 1200,
   duration: 25,
 }
 

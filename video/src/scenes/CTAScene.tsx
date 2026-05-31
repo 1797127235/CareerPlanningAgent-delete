@@ -1,22 +1,16 @@
 import React from 'react'
-import { useCurrentFrame, useVideoConfig, interpolate } from 'remotion'
+import { useCurrentFrame, useVideoConfig } from 'remotion'
 import { C, FONT } from '../tokens'
 import { CTA_V2 } from '../content'
-import { Scene, FadeIn } from '../components/Animations'
+import { Scene, SpringFadeIn, SpringScaleIn, SPRING_BOUNCE, SPRING_POP, SPRING_SOFT, getSpringProgress } from '../components/Animations'
 
 const CTAScene: React.FC = () => {
   const frame = useCurrentFrame()
   const { fps, width, height } = useVideoConfig()
 
-  const glowSize = interpolate(frame, [0, 8 * fps], [400, 900], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  })
-
-  const glowOpacity = interpolate(frame, [0, 2 * fps], [0, 0.2], {
-    extrapolateLeft: 'clamp',
-    extrapolateRight: 'clamp',
-  })
+  const glowProgress = getSpringProgress(frame, fps, 0, 3, SPRING_SOFT)
+  const glowSize = 400 + glowProgress * 500
+  const glowOpacity = glowProgress * 0.2
 
   return (
     <Scene bg={C.bgDark}>
@@ -43,7 +37,7 @@ const CTAScene: React.FC = () => {
           gap: 24,
         }}
       >
-        <FadeIn delay={0.3} duration={1}>
+        <SpringScaleIn delay={0.3} duration={1.5} from={0.5} springConfig={SPRING_BOUNCE}>
           <div
             style={{
               fontSize: 48,
@@ -56,9 +50,9 @@ const CTAScene: React.FC = () => {
           >
             {CTA_V2.headline}
           </div>
-        </FadeIn>
+        </SpringScaleIn>
 
-        <FadeIn delay={1.2} duration={0.8}>
+        <SpringFadeIn delay={1.2} duration={0.8} springConfig={SPRING_POP}>
           <div
             style={{
               fontSize: 20,
@@ -69,9 +63,9 @@ const CTAScene: React.FC = () => {
           >
             {CTA_V2.sub}
           </div>
-        </FadeIn>
+        </SpringFadeIn>
 
-        <FadeIn delay={1.8} duration={0.8}>
+        <SpringScaleIn delay={1.8} duration={0.8} from={0.8} springConfig={SPRING_POP}>
           <div
             style={{
               marginTop: 20,
@@ -86,9 +80,9 @@ const CTAScene: React.FC = () => {
           >
             {CTA_V2.url}
           </div>
-        </FadeIn>
+        </SpringScaleIn>
 
-        <FadeIn delay={2.5} duration={0.6}>
+        <SpringFadeIn delay={2.5} duration={0.6} springConfig={SPRING_SOFT}>
           <div
             style={{
               marginTop: 40,
@@ -100,7 +94,7 @@ const CTAScene: React.FC = () => {
           >
             THANK YOU
           </div>
-        </FadeIn>
+        </SpringFadeIn>
       </div>
     </Scene>
   )

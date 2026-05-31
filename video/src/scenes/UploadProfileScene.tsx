@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig, AbsoluteFill, interpolate } from 'remo
 import { C, FONT } from '../tokens'
 import { UPLOAD_PROFILE_DATA } from '../content'
 import { ScoreBar, SkillChip, MiniNavbar, fadeIn, slideUp } from '../components/UIPrimitives'
+import { SpringScaleIn, SPRING_POP } from '../components/Animations'
 
 const UploadProfileScene: React.FC = () => {
   const frame = useCurrentFrame()
@@ -94,31 +95,37 @@ const Phase3: React.FC<{ d: typeof UPLOAD_PROFILE_DATA }> = ({ d }) => {
   return (
     <div style={{ display: 'flex', gap: 40, width: '100%', opacity: anim.opacity, transform: `translateY(${anim.translateY}px)` }}>
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ backgroundColor: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 16, padding: 20 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: C.ink, fontFamily: FONT.sans }}>{d.name}</div>
-              <div style={{ fontSize: 14, color: C.chestnut, fontFamily: FONT.sans, marginTop: 4 }}>目标：{d.target}</div>
+        <SpringScaleIn delay={8} duration={0.6} from={0.9} springConfig={SPRING_POP}>
+          <div style={{ backgroundColor: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 16, padding: 20 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 22, fontWeight: 800, color: C.ink, fontFamily: FONT.sans }}>{d.name}</div>
+                <div style={{ fontSize: 14, color: C.chestnut, fontFamily: FONT.sans, marginTop: 4 }}>目标：{d.target}</div>
+              </div>
+              <div style={{ width: 48, height: 48, borderRadius: 24, background: `linear-gradient(135deg, ${C.chestnut}, ${C.accent})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: C.white, fontWeight: 700 }}>林</div>
             </div>
-            <div style={{ width: 48, height: 48, borderRadius: 24, background: `linear-gradient(135deg, ${C.chestnut}, ${C.accent})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: C.white, fontWeight: 700 }}>林</div>
           </div>
-        </div>
-        <div style={{ backgroundColor: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 16, padding: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, marginBottom: 10, letterSpacing: 1 }}>能力维度</div>
-          {d.dimensionScores.map((dim, i) => (
-            <ScoreBar key={i} label={dim.name} score={dim.score} delay={8.3 + i * 0.25} />
-          ))}
-        </div>
-      </div>
-      <div style={{ flex: 1 }}>
-        <div style={{ backgroundColor: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 16, padding: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, marginBottom: 10, letterSpacing: 1 }}>技能标签</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap' }}>
-            {d.skills.map((skill, i) => (
-              <SkillChip key={i} label={`${skill.name} · ${skill.level}`} type="neutral" delay={8.6 + i * 0.12} />
+        </SpringScaleIn>
+        <SpringScaleIn delay={8.3} duration={0.6} from={0.9} springConfig={SPRING_POP}>
+          <div style={{ backgroundColor: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 16, padding: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, marginBottom: 10, letterSpacing: 1 }}>能力维度</div>
+            {d.dimensionScores.map((dim, i) => (
+              <ScoreBar key={i} label={dim.name} score={dim.score} delay={8.3 + i * 0.25} />
             ))}
           </div>
-        </div>
+        </SpringScaleIn>
+      </div>
+      <div style={{ flex: 1 }}>
+        <SpringScaleIn delay={8.6} duration={0.6} from={0.9} springConfig={SPRING_POP}>
+          <div style={{ backgroundColor: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 16, padding: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, marginBottom: 10, letterSpacing: 1 }}>技能标签</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+              {d.skills.map((skill, i) => (
+                <SkillChip key={i} label={`${skill.name} · ${skill.level}`} type="neutral" delay={8.6 + i * 0.12} />
+              ))}
+            </div>
+          </div>
+        </SpringScaleIn>
       </div>
     </div>
   )

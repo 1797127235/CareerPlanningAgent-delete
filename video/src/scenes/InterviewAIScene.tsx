@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig, AbsoluteFill } from 'remotion'
 import { C, FONT } from '../tokens'
 import { INTERVIEW_AI_DATA } from '../content'
 import { ScoreRing, MiniNavbar, fadeIn, delayFrame } from '../components/UIPrimitives'
+import { SpringScaleIn, SPRING_POP } from '../components/Animations'
 
 const InterviewAIScene: React.FC = () => {
   const frame = useCurrentFrame()
@@ -60,7 +61,9 @@ const InterviewPhase: React.FC<{ d: typeof INTERVIEW_AI_DATA; frame: number; fps
       )}
 
       <div style={{ opacity: scoreVisible, display: 'flex', alignItems: 'center', gap: 20 }}>
-        <ScoreRing score={d.overallScore} size={80} delay={8} label="综合评分" />
+        <SpringScaleIn delay={7.5} duration={1} from={0.6} springConfig={SPRING_POP}>
+          <ScoreRing score={d.overallScore} size={80} delay={8} label="综合评分" />
+        </SpringScaleIn>
         <div>
           {d.perQuestion.map((q, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${C.lineSoft}` }}>

@@ -3,6 +3,7 @@ import { useCurrentFrame, useVideoConfig, AbsoluteFill } from 'remotion'
 import { C, FONT } from '../tokens'
 import { REPORT_DATA } from '../content'
 import { MiniNavbar, PaperCard, ReportActionItem, fadeIn, slideUp } from '../components/UIPrimitives'
+import { SpringScaleIn, SPRING_POP } from '../components/Animations'
 
 const ReportScene: React.FC = () => {
   const frame = useCurrentFrame()
@@ -89,9 +90,13 @@ const ActionPlanView: React.FC<{ d: typeof REPORT_DATA; frame: number; fps: numb
   return (
     <div style={{ opacity: visible }}>
       <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, marginBottom: 10, letterSpacing: 1 }}>行动计划</div>
-      {d.actionPlan.map((item, i) => (
-        <ReportActionItem key={i} task={item.task} deadline={item.deadline} evidence={item.evidence} index={i} delay={13.3} />
-      ))}
+      <SpringScaleIn delay={13} duration={0.6} from={0.9} springConfig={SPRING_POP}>
+        <div>
+          {d.actionPlan.map((item, i) => (
+            <ReportActionItem key={i} task={item.task} deadline={item.deadline} evidence={item.evidence} index={i} delay={13.3} />
+          ))}
+        </div>
+      </SpringScaleIn>
     </div>
   )
 }

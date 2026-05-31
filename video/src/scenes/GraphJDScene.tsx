@@ -1,160 +1,318 @@
 import React from 'react'
-import { useCurrentFrame, useVideoConfig, AbsoluteFill, interpolate, Easing } from 'remotion'
+import { useCurrentFrame, useVideoConfig, AbsoluteFill, interpolate } from 'remotion'
 import { C, FONT } from '../tokens'
 import { GRAPH_JD_DATA } from '../content'
-import { RadarChart, ScoreRing, SkillChip, MiniNavbar, fadeIn, delayFrame } from '../components/UIPrimitives'
-
-const zoneColor = (zone: string) =>
-  zone === 'safe' ? C.zoneSafe : zone === 'leverage' ? C.zoneLeverage : zone === 'transition' ? C.zoneTransition : C.zoneDanger
-const zoneLabel = (zone: string) =>
-  zone === 'safe' ? '安全区' : zone === 'leverage' ? '协同优势' : zone === 'transition' ? '转型过渡' : '替代警惕'
+import { MiniNavbar, RadarChart } from '../components/UIPrimitives'
+import { SpringFadeIn, SpringScaleIn, StaggerSpring, SPRING_BOUNCE, SPRING_POP, SPRING_SOFT, getSpringProgress } from '../components/Animations'
 
 const GraphJDScene: React.FC = () => {
   const frame = useCurrentFrame()
   const { fps } = useVideoConfig()
   const d = GRAPH_JD_DATA
-  const graphEnd = 12
 
-  const isGraph = frame < graphEnd * fps
-  const isJD = frame >= graphEnd * fps
+  const phase1End = 8 * fps
+  const phase2End = 18 * fps
+
+  const isPhase1 = frame < phase1End
+  const isPhase2 = frame >= phase1End && frame < phase2End
+  const isPhase3 = frame >= phase2End
 
   return (
     <AbsoluteFill style={{ backgroundColor: C.bg, fontFamily: FONT.sans }}>
       <MiniNavbar activeLabel="职位地图" />
       <div style={{ padding: '24px 60px 40px', height: 'calc(100% - 64px)', display: 'flex', flexDirection: 'column' }}>
-        {isGraph && <GraphPhase d={d} fps={fps} />}
-        {isJD && <JDPhase d={d} frame={frame} fps={fps} />}
+        <SpringFadeIn delay={0.2} duration={0.5} direction="up" distance={10} springConfig={SPRING_SOFT}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, letterSpacing: 1, marginBottom: 16 }}>
+            02 · 岗位图谱
+          </div>
+        </SpringFadeIn>
+
+        <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+          {/* Phase 1: Positioning (0-8s) */}
+          <Phase1Nodes d={d} frame={frame} fps={fps} visible={isPhase1 || frame < phase1End + 2 * fps} />
+
+          {/* Phase 2: Diagnosis (8-18s) */}
+          {isPhase2 && <Phase2Diagnosis d={d} frame={frame} fps={fps} phase1End={phase1End} />}
+
+          {/* Phase 3: Path (18-25s) */}
+          {isPhase3 && <Phase3Path d={d} frame={frame} fps={fps} phase2End={phase2End} />}
+        </div>
       </div>
     </AbsoluteFill>
   )
 }
 
-const GraphPhase: React.FC<{ d: typeof GRAPH_JD_DATA; fps: number }> = ({ d, fps }) => {
-  const frame = useCurrentFrame()
-  const coverflowProgress = interpolate(frame, [0.5 * fps, 4 * fps], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: Easing.bezier(0.16, 1, 0.3, 1) })
-  const centerIdx = Math.round(coverflowProgress * (d.roles.length - 1))
-  const radarVisible = fadeIn(frame, fps, 6, 0.5)
-  const influenceVisible = fadeIn(frame, fps, 8, 0.5)
+// ─── Phase 1: 45 Nodes Grid ───
+const Phase1Nodes: React.FC<{ d: typeof GRAPH_JD_DATA; frame: number; fps: number; visible: boolean }> = ({ d, frame, fps, visible }) => {
+  const targetIds = new Set(d.targetPath.map(r => r.id))
+
+  // 6 columns × 8 rows grid
+  const cols = 6
+  const rows = 8
+  const gridGap = 12
+  const nodeSize = 48
+
+  const highlightProgress = getSpringProgress(frame, fps, 2.5, 3, SPRING_SOFT)
+
+  const containerOpacity = visible
+    ? frame > 10 * fps ? interpolate(frame, [10 * fps, 10.5 * fps], [1, 0.15], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' }) : 1
+    : 0.15
+
+  const containerScale = frame > 10 * fps
+    ? interpolate(frame, [10 * fps, 10.5 * fps], [1, 0.6], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' })
+    : 1
 
   return (
-    <>
-      <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, letterSpacing: 1, marginBottom: 16, opacity: fadeIn(frame, fps, 0, 0.4) }}>
-        02 · 岗位图谱 → JD 匹配
+    <div style={{
+      position: 'absolute',
+      inset: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      opacity: containerOpacity,
+      transform: `scale(${containerScale})`,
+      transition: 'none',
+    }}>
+      {/* Grid of nodes */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${cols}, ${nodeSize}px)`,
+        gridTemplateRows: `repeat(${rows}, ${nodeSize}px)`,
+        gap: `${gridGap}px`,
+        position: 'relative',
+      }}>
+        {d.roles.slice(0, cols * rows).map((role, i) => {
+          const isTarget = targetIds.has(role.id)
+          const row = Math.floor(i / cols)
+          const col = i % cols
+          const delay = (row + col) * 0.03
+
+          return (
+            <SpringScaleIn key={role.id} delay={delay} duration={1.5} from={0} springConfig={SPRING_POP}>
+              <div style={{
+                width: nodeSize,
+                height: nodeSize,
+                borderRadius: '50%',
+                backgroundColor: isTarget
+                  ? (highlightProgress > 0.5 ? C.chestnut : C.line)
+                  : C.lineSoft,
+                opacity: isTarget ? 1 : 0.5 + highlightProgress * 0.3,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 9,
+                fontWeight: isTarget ? 700 : 500,
+                color: isTarget ? C.white : C.ink2,
+                boxShadow: isTarget ? `0 0 ${12 + highlightProgress * 8}px ${C.chestnut}60` : 'none',
+                transform: `scale(${isTarget ? 1 + highlightProgress * 0.2 : 1})`,
+              }}>
+                {role.label.slice(0, 2)}
+              </div>
+            </SpringScaleIn>
+          )
+        })}
       </div>
-      <div style={{ flex: 1, display: 'flex', gap: 32 }}>
-        <div style={{ flex: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-          {d.roles.map((role, i) => {
-            const dist = i - centerIdx
-            const absDist = Math.abs(dist)
-            const cardOpacity = absDist > 2 ? 0 : absDist === 0 ? 1 : 0.45
-            const cardScale = absDist === 0 ? 1.05 : 0.82
-            const cardOffsetX = dist * 110
+
+      {/* Connecting lines for target path */}
+      {frame > 5 * fps && (
+        <svg style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: cols * (nodeSize + gridGap), height: rows * (nodeSize + gridGap), pointerEvents: 'none' }}>
+          {d.targetPath.slice(0, -1).map((_, i) => {
+            const fromRole = d.targetPath[i]
+            const toRole = d.targetPath[i + 1]
+            const fromIdx = d.roles.findIndex(r => r.id === fromRole.id)
+            const toIdx = d.roles.findIndex(r => r.id === toRole.id)
+            if (fromIdx === -1 || toIdx === -1) return null
+
+            const fromRow = Math.floor(fromIdx / cols)
+            const fromCol = fromIdx % cols
+            const toRow = Math.floor(toIdx / cols)
+            const toCol = toIdx % cols
+
+            const x1 = fromCol * (nodeSize + gridGap) + nodeSize / 2
+            const y1 = fromRow * (nodeSize + gridGap) + nodeSize / 2
+            const x2 = toCol * (nodeSize + gridGap) + nodeSize / 2
+            const y2 = toRow * (nodeSize + gridGap) + nodeSize / 2
+
+            const lineProgress = getSpringProgress(frame, fps, 5 + i * 0.5, 2, SPRING_SOFT)
 
             return (
-              <div key={i} style={{ position: 'absolute', left: '50%', marginLeft: -110 + cardOffsetX }}>
-                <div style={{
-                  width: 220, height: 280, backgroundColor: C.card,
-                  border: `1.5px solid ${absDist === 0 ? C.chestnut : C.lineSoft}`,
-                  borderRadius: 20, padding: 20, opacity: Math.min(cardOpacity, fadeIn(frame, fps, 0.3, 0.4)),
-                  transform: `scale(${cardScale})`,
-                  boxShadow: absDist === 0 ? `0 8px 32px ${C.chestnut}20` : '0 2px 8px rgba(0,0,0,0.04)',
-                  display: 'flex', flexDirection: 'column',
-                }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: zoneColor(role.zone), backgroundColor: `${zoneColor(role.zone)}15`, padding: '3px 10px', borderRadius: 8, alignSelf: 'flex-start', marginBottom: 10 }}>{zoneLabel(role.zone)}</div>
-                  <div style={{ fontSize: 16, fontWeight: 800, color: C.ink, fontFamily: FONT.sans, marginBottom: 4 }}>{role.label}</div>
-                  <div style={{ fontSize: 12, color: C.inkMuted, marginBottom: 12 }}>{role.family}</div>
-                  <div style={{ fontSize: 24, fontWeight: 900, color: C.chestnut, marginBottom: 8 }}>{role.salary}</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                    {role.skills.map((s, si) => <span key={si} style={{ fontSize: 10, padding: '2px 8px', borderRadius: 8, backgroundColor: C.paper2, color: C.ink2 }}>{s}</span>)}
-                  </div>
-                  <div style={{ marginTop: 'auto' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: C.inkMuted, marginBottom: 3 }}>
-                      <span>AI 协同度</span><span>{Math.round(role.aiLeverage * 100)}%</span>
-                    </div>
-                    <div style={{ height: 4, borderRadius: 2, backgroundColor: C.line, overflow: 'hidden' }}>
-                      <div style={{ width: `${role.aiLeverage * 100}%`, height: '100%', borderRadius: 2, backgroundColor: zoneColor(role.zone) }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <line
+                key={i}
+                x1={x1}
+                y1={y1}
+                x2={x1 + (x2 - x1) * lineProgress}
+                y2={y1 + (y2 - y1) * lineProgress}
+                stroke={C.chestnut}
+                strokeWidth={2}
+                opacity={lineProgress}
+                strokeDasharray="4 4"
+              />
             )
           })}
+        </svg>
+      )}
+
+      {/* Bottom caption */}
+      <SpringFadeIn delay={6} duration={1} direction="up" distance={20} springConfig={SPRING_SOFT}>
+        <div style={{
+          position: 'absolute',
+          bottom: 40,
+          fontSize: 16,
+          color: C.ink2,
+          textAlign: 'center',
+          fontWeight: 500,
+        }}>
+          在 45 个 IT 岗位中，系统定位了你的职业坐标
         </div>
-        <div style={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 20, justifyContent: 'center' }}>
-          <div style={{ backgroundColor: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 16, padding: 20, opacity: radarVisible }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, marginBottom: 12, letterSpacing: 1 }}>岗位能力雷达</div>
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <RadarChart axes={d.radarAxes} size={200} delay={6.2} />
-            </div>
-          </div>
-          <div style={{ backgroundColor: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 16, padding: 20, opacity: influenceVisible }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, marginBottom: 10, letterSpacing: 1 }}>AI 影响分析</div>
-            <div style={{ fontSize: 36, fontWeight: 900, color: C.chestnut, fontFamily: FONT.sans }}>{d.aiInfluence}</div>
-            <div style={{ fontSize: 13, color: C.inkMuted, fontFamily: FONT.sans }}>前端开发岗位的 AI 协同度</div>
-          </div>
-        </div>
-      </div>
-    </>
+      </SpringFadeIn>
+    </div>
   )
 }
 
-const JDPhase: React.FC<{ d: typeof GRAPH_JD_DATA; frame: number; fps: number }> = ({ d, frame, fps }) => {
-  const jdStart = 12
-  const f = delayFrame(frame, jdStart, fps)
-  const charCount = Math.min(d.jdText.length, Math.floor(f / 2.5))
-  const visibleText = d.jdText.slice(0, charCount)
+// ─── Phase 2: Diagnosis ───
+const Phase2Diagnosis: React.FC<{ d: typeof GRAPH_JD_DATA; frame: number; fps: number; phase1End: number }> = ({ d, frame, fps, phase1End }) => {
+  const localFrame = frame - phase1End
 
-  const scoreVisible = fadeIn(frame, fps, 15, 0.5)
-  const dimsVisible = fadeIn(frame, fps, 17, 0.5)
-  const skillsVisible = fadeIn(frame, fps, 19, 0.5)
+  // Radar chart data
+  const requirementAxes = d.radarAxes.map((a, i) => ({ ...a, value: a.value }))
+  const userAxes = d.radarAxes.map((a, i) => ({ ...a, value: d.userRadarScores[i] }))
+
+  const radarVisible = getSpringProgress(localFrame, fps, 0, 2, SPRING_SOFT)
+  const scoreVisible = getSpringProgress(localFrame, fps, 4, 2, SPRING_BOUNCE)
 
   return (
-    <>
-      <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, letterSpacing: 1, marginBottom: 16, opacity: fadeIn(frame, fps, jdStart, 0.4) }}>
-        02 · JD 匹配分析
-      </div>
-      <div style={{ flex: 1, display: 'flex', gap: 32 }}>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div style={{ backgroundColor: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 16, padding: 20, opacity: fadeIn(frame, fps, jdStart, 0.3) }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, marginBottom: 10, letterSpacing: 1 }}>职位描述</div>
-            <div style={{ fontSize: 13, color: C.ink, lineHeight: 1.7, fontFamily: FONT.sans, backgroundColor: C.paper2, padding: 16, borderRadius: 12, border: `1px solid ${C.lineSoft}`, minHeight: 100, maxHeight: 140, overflow: 'hidden' }}>
-              {visibleText}
-              {charCount < d.jdText.length && <span style={{ borderRight: `2px solid ${C.chestnut}`, marginLeft: 1 }}> </span>}
-            </div>
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', gap: 32, alignItems: 'center' }}>
+      {/* Left: Requirement Radar */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: radarVisible, transform: `scale(${0.8 + 0.2 * radarVisible})` }}>
+        <SpringFadeIn delay={0.2} duration={1} springConfig={SPRING_SOFT}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, marginBottom: 16, letterSpacing: 1 }}>
+            岗位要求
           </div>
-          <div style={{ backgroundColor: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 16, padding: 20, opacity: dimsVisible }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, marginBottom: 12, letterSpacing: 1 }}>四维评分</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-              {d.dimensions.map((dim, i) => {
-                const color = dim.score >= 80 ? C.chestnut : dim.score >= 70 ? C.chestnutLight : C.accent
-                return (
-                  <div key={i} style={{ backgroundColor: C.paper2, borderRadius: 10, padding: '10px 14px' }}>
-                    <div style={{ fontSize: 11, color: C.inkMuted, marginBottom: 4 }}>{dim.label}</div>
-                    <div style={{ fontSize: 22, fontWeight: 800, color, fontFamily: FONT.sans }}>{dim.score}</div>
-                  </div>
-                )
-              })}
-            </div>
+        </SpringFadeIn>
+        <RadarChart axes={requirementAxes} size={200} delay={0.5} />
+      </div>
+
+      {/* Center: Match Score */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+        <SpringScaleIn delay={3.5} duration={1.5} from={0.5} springConfig={SPRING_BOUNCE}>
+          <div style={{
+            fontSize: 80,
+            fontWeight: 900,
+            color: C.chestnut,
+            fontFamily: FONT.sans,
+            lineHeight: 1,
+          }}>
+            {Math.round(scoreVisible * d.matchScore)}%
+          </div>
+        </SpringScaleIn>
+        <SpringFadeIn delay={5} duration={0.8} springConfig={SPRING_POP}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: C.ink }}>
+            {d.matchLabel}
+          </div>
+        </SpringFadeIn>
+        <SpringFadeIn delay={5.5} duration={0.8} springConfig={SPRING_POP}>
+          <div style={{ fontSize: 14, color: C.accent, fontWeight: 700 }}>
+            {d.gapCount} 项核心能力存在差距
+          </div>
+        </SpringFadeIn>
+      </div>
+
+      {/* Right: User Radar */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', opacity: radarVisible, transform: `scale(${0.8 + 0.2 * radarVisible})` }}>
+        <SpringFadeIn delay={0.4} duration={1} springConfig={SPRING_SOFT}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, marginBottom: 16, letterSpacing: 1 }}>
+            当前能力
+          </div>
+        </SpringFadeIn>
+        <RadarChart axes={userAxes} size={200} delay={0.7} accentColor={C.accent} />
+      </div>
+    </div>
+  )
+}
+
+// ─── Phase 3: Path ───
+const Phase3Path: React.FC<{ d: typeof GRAPH_JD_DATA; frame: number; fps: number; phase2End: number }> = ({ d, frame, fps, phase2End }) => {
+  return (
+    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 24 }}>
+      <SpringFadeIn delay={0.2} duration={0.6} springConfig={SPRING_SOFT}>
+        <div style={{ fontSize: 14, fontWeight: 700, color: C.ink2, letterSpacing: 1, marginBottom: 8 }}>
+          系统已生成专属成长路径
+        </div>
+      </SpringFadeIn>
+
+      <StaggerSpring baseDelay={0.5} staggerFrames={8} duration={0.8} direction="up" distance={30} springConfig={SPRING_POP}>
+        {d.gapItems.map((item, i) => (
+          <GapCard key={i} item={item} index={i} />
+        ))}
+      </StaggerSpring>
+
+      <SpringScaleIn delay={3.5} duration={1.5} from={0.8} springConfig={SPRING_BOUNCE}>
+        <div style={{
+          marginTop: 16,
+          padding: '16px 40px',
+          backgroundColor: `${C.chestnut}10`,
+          borderRadius: 12,
+          border: `2px solid ${C.chestnut}30`,
+          textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 14, color: C.ink2, marginBottom: 4 }}>预计学习时间</div>
+          <div style={{ fontSize: 36, fontWeight: 900, color: C.chestnut, fontFamily: FONT.sans }}>
+            {d.totalHours} 小时
           </div>
         </div>
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, opacity: scoreVisible }}>
-            <ScoreRing score={d.matchScore} size={120} delay={15} label="匹配度" />
-            <div style={{ fontSize: 16, fontWeight: 700, color: C.chestnut, fontFamily: FONT.sans }}>{d.matchLabel}</div>
-          </div>
-          <div style={{ opacity: skillsVisible }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.zoneSafe, marginBottom: 8, letterSpacing: 1 }}>已匹配 ✓</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 14 }}>
-              {d.matchedSkills.map((s, i) => <SkillChip key={i} label={s} type="match" delay={19 + i * 0.1} />)}
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.accent, marginBottom: 8, letterSpacing: 1 }}>缺口技能</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-              {d.gapSkills.map((s, i) => <SkillChip key={i} label={s} type="gap" delay={20 + i * 0.1} />)}
-            </div>
-          </div>
+      </SpringScaleIn>
+    </div>
+  )
+}
+
+const GapCard: React.FC<{ item: typeof GRAPH_JD_DATA.gapItems[0]; index: number }> = ({ item, index }) => {
+  const frame = useCurrentFrame()
+  const { fps } = useVideoConfig()
+  const barProgress = getSpringProgress(frame, fps, 1.5 + index * 0.3, 1.5, SPRING_POP)
+
+  return (
+    <div style={{
+      width: 480,
+      backgroundColor: C.card,
+      border: `1px solid ${C.lineSoft}`,
+      borderRadius: 16,
+      padding: '16px 20px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 16,
+    }}>
+      <div style={{ width: 100, fontSize: 14, fontWeight: 700, color: C.ink, fontFamily: FONT.sans }}>
+        {item.skill}
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: C.ink2, marginBottom: 6 }}>
+          <span>当前 {item.current}%</span>
+          <span>目标 {item.target}%</span>
+        </div>
+        <div style={{ height: 8, borderRadius: 4, backgroundColor: C.line, overflow: 'hidden', position: 'relative' }}>
+          <div style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            height: '100%',
+            width: `${item.current}%`,
+            borderRadius: 4,
+            backgroundColor: C.lineSoft,
+          }} />
+          <div style={{
+            width: `${item.current + (item.target - item.current) * barProgress}%`,
+            height: '100%',
+            borderRadius: 4,
+            backgroundColor: C.chestnut,
+            opacity: barProgress,
+          }} />
         </div>
       </div>
-    </>
+      <div style={{ fontSize: 12, color: C.inkMuted, width: 60, textAlign: 'right' }}>
+        {item.hours}h
+      </div>
+    </div>
   )
 }
 
