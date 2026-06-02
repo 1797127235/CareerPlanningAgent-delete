@@ -1249,11 +1249,11 @@ const CentralCandidateCluster: React.FC<{
 
 const SignalStream: React.FC<{ frame: number }> = ({ frame }) => {
   const signals = [
-    { startX: 358, startY: 240, endX: 640, endY: 306, delay: 0 },
-    { startX: 356, startY: 286, endX: 652, endY: 336, delay: 6 },
-    { startX: 358, startY: 332, endX: 664, endY: 362, delay: 12 },
-    { startX: 360, startY: 378, endX: 654, endY: 388, delay: 18 },
-    { startX: 360, startY: 424, endX: 640, endY: 418, delay: 24 },
+    { label: 'React', startX: 358, startY: 240, endX: 640, endY: 306, delay: 0 },
+    { label: 'TypeScript', startX: 356, startY: 286, endX: 652, endY: 336, delay: 6 },
+    { label: 'CSS', startX: 358, startY: 332, endX: 664, endY: 362, delay: 12 },
+    { label: '前端倾向', startX: 360, startY: 378, endX: 654, endY: 388, delay: 18 },
+    { label: '协作项目', startX: 360, startY: 424, endX: 640, endY: 418, delay: 24 },
   ]
 
   return (
@@ -1262,9 +1262,44 @@ const SignalStream: React.FC<{ frame: number }> = ({ frame }) => {
         const p = progressBetween(frame, 18 + signal.delay, 54 + signal.delay, easeOutExpo)
         const x = signal.startX + (signal.endX - signal.startX) * p
         const y = signal.startY + (signal.endY - signal.startY) * p
+        const sourceP = progressBetween(frame, 10 + signal.delay, 34 + signal.delay, easeOutExpo)
+        const sourcePulse = 0.7 + Math.sin((frame + signal.delay) / 7) * 0.3
+        const trailWidth = 24 + p * 28
 
         return (
           <React.Fragment key={i}>
+            <div
+              style={{
+                position: 'absolute',
+                left: signal.startX - 94,
+                top: signal.startY - 12,
+                padding: '4px 8px',
+                border: '1px solid rgba(107,163,190,0.14)',
+                backgroundColor: 'rgba(107,163,190,0.07)',
+                fontSize: 10,
+                fontWeight: 800,
+                color: C.scan,
+                fontFamily: FONT.mono,
+                letterSpacing: 1.1,
+                opacity: sourceP * 0.9,
+                transform: `translateX(${(1 - sourceP) * -8}px)`,
+              }}
+            >
+              {signal.label}
+            </div>
+            <div
+              style={{
+                position: 'absolute',
+                left: signal.startX - 9,
+                top: signal.startY - 9,
+                width: 18,
+                height: 18,
+                borderRadius: '50%',
+                border: `1px solid rgba(107,163,190,${0.18 + sourcePulse * 0.18})`,
+                boxShadow: `0 0 18px rgba(107,163,190,0.12)`,
+                opacity: sourceP * 0.9,
+              }}
+            />
             <div
               style={{
                 position: 'absolute',
@@ -1272,20 +1307,31 @@ const SignalStream: React.FC<{ frame: number }> = ({ frame }) => {
                 top: signal.startY,
                 width: signal.endX - signal.startX,
                 height: 1,
-                background: 'linear-gradient(90deg, rgba(107,163,190,0) 0%, rgba(107,163,190,0.16) 30%, rgba(107,163,190,0.04) 100%)',
-                opacity: p * 0.8,
+                background: 'linear-gradient(90deg, rgba(107,163,190,0.34) 0%, rgba(107,163,190,0.22) 22%, rgba(107,163,190,0.08) 68%, rgba(107,163,190,0.02) 100%)',
+                opacity: p * 0.95,
               }}
             />
             <div
               style={{
                 position: 'absolute',
-                left: x - 5,
-                top: y - 5,
-                width: 10,
-                height: 10,
+                left: x - trailWidth,
+                top: y - 1,
+                width: trailWidth,
+                height: 2,
+                background: 'linear-gradient(90deg, rgba(107,163,190,0) 0%, rgba(107,163,190,0.12) 28%, rgba(107,163,190,0.46) 100%)',
+                opacity: p * 0.9,
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                left: x - 6,
+                top: y - 6,
+                width: 12,
+                height: 12,
                 borderRadius: '50%',
                 backgroundColor: C.scan,
-                boxShadow: `0 0 16px ${C.scanGlow}, 0 0 32px ${C.scanGlow}`,
+                boxShadow: `0 0 18px ${C.scanGlow}, 0 0 40px ${C.scanGlow}`,
                 opacity: p * (1 - p * 0.2),
               }}
             />

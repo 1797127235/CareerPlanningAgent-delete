@@ -244,13 +244,16 @@ export const GrowthScene: React.FC = () => {
                   </div>
                   <div
                     style={{
-                      padding: '4px 8px',
+                      padding: '4px 10px',
                       border: '1px solid rgba(247,241,235,0.08)',
                       backgroundColor: 'rgba(247,241,235,0.03)',
                       fontSize: 10,
                       fontWeight: 700,
                       color: C.inkMuted,
                       fontFamily: FONT.mono,
+                      minWidth: 78,
+                      textAlign: 'center',
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     {item.tag}
@@ -441,13 +444,16 @@ export const GrowthScene: React.FC = () => {
                   </div>
                   <div
                     style={{
-                      padding: '4px 8px',
+                      padding: '4px 10px',
                       border: '1px solid rgba(107,163,190,0.14)',
                       backgroundColor: 'rgba(107,163,190,0.06)',
                       fontSize: 10,
                       fontWeight: 700,
                       color: C.scan,
                       fontFamily: FONT.mono,
+                      minWidth: 92,
+                      textAlign: 'center',
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     {item.status}
