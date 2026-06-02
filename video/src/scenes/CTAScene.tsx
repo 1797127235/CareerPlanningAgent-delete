@@ -3,6 +3,15 @@ import {AbsoluteFill, interpolate, useCurrentFrame} from 'remotion'
 import {CTA_V2} from '../content'
 import {BG, C, FONT, FPS} from '../tokens'
 import {easeOutExpo, progressBetween} from '../motion/cinematic'
+import {
+  panelGlowOrb,
+  panelTopLine,
+  premiumPanel,
+  screenVignette,
+  sectionEyebrowText,
+  sectionRailLine,
+  trailTag,
+} from '../visualSystem'
 
 const traceSignals = [
   {label: '画像', detail: '理解学生当前能力结构', accent: C.scan},
@@ -48,7 +57,8 @@ export const CTAScene: React.FC = () => {
   })
 
   return (
-    <AbsoluteFill style={{fontFamily: FONT.sans, overflow: 'hidden', background: BG.close, color: C.white}}>
+    <AbsoluteFill style={{fontFamily: FONT.sans, overflow: 'hidden', background: BG.scan, color: C.white}}>
+      <div style={{...screenVignette(0.3), zIndex: 1}} />
       <div
         style={{
           position: 'absolute',
@@ -80,7 +90,7 @@ export const CTAScene: React.FC = () => {
           width: 640,
           height: 300,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(168,144,112,0.12) 0%, transparent 72%)',
+          background: 'radial-gradient(circle, rgba(107,163,190,0.1) 0%, transparent 72%)',
           filter: 'blur(18px)',
         }}
       />
@@ -96,25 +106,8 @@ export const CTAScene: React.FC = () => {
           opacity: titleP,
         }}
       >
-        <div
-          style={{
-            width: 64,
-            height: 1,
-            backgroundColor: C.resolve,
-            boxShadow: `0 0 14px rgba(168,144,112,0.28)`,
-          }}
-        />
-        <div
-          style={{
-            fontSize: 15,
-            fontWeight: 900,
-            color: C.resolve,
-            fontFamily: FONT.mono,
-            letterSpacing: 2.2,
-          }}
-        >
-          最终收束
-        </div>
+        <div style={sectionRailLine} />
+        <div style={sectionEyebrowText}>系统终局</div>
       </div>
 
       <div
@@ -122,17 +115,12 @@ export const CTAScene: React.FC = () => {
           position: 'absolute',
           right: 72,
           top: 52,
-          padding: '10px 14px',
-          border: '1px solid rgba(168,144,112,0.12)',
-          backgroundColor: 'rgba(168,144,112,0.05)',
+          ...trailTag('scan'),
           fontSize: 12,
-          color: C.inkMuted,
-          fontFamily: FONT.mono,
-          letterSpacing: 1.3,
           opacity: titleP,
         }}
       >
-        产品定义 → 价值落点 → 终局签名
+        系统报告 → 价值落点 → 最终结论
       </div>
 
       <div
@@ -161,14 +149,15 @@ export const CTAScene: React.FC = () => {
               <div
                 key={item.label}
                 style={{
+                  position: 'relative',
                   padding: '14px 16px 13px',
-                  border: '1px solid rgba(247,241,235,0.06)',
-                  background: 'linear-gradient(180deg, rgba(247,241,235,0.03) 0%, rgba(247,241,235,0.012) 100%)',
                   borderLeft: `3px solid ${item.accent}`,
+                  ...premiumPanel('scan'),
                   opacity: p,
                   transform: `translateX(${(1 - p) * -16}px)`,
                 }}
               >
+                <div style={panelTopLine('scan', 18)} />
                 <div
                   style={{
                     fontSize: 10,
@@ -205,40 +194,51 @@ export const CTAScene: React.FC = () => {
           >
             <div
               style={{
-                fontSize: 12,
-                fontWeight: 900,
-                color: C.scan,
-                fontFamily: FONT.mono,
-                letterSpacing: 1.8,
+                position: 'relative',
+                padding: '34px 36px 40px',
+                minHeight: 250,
+                ...premiumPanel('scan', true),
               }}
             >
-              PRODUCT IDENTITY
-            </div>
-            <div
-              style={{
-                marginTop: 16,
-                fontSize: 86,
-                lineHeight: 0.92,
-                fontWeight: 900,
-                letterSpacing: -4,
-                color: C.white,
-              }}
-            >
-              CareerOS
-              <br />
-              职业智能体
-            </div>
-            <div
-              style={{
-                marginTop: 18,
-                maxWidth: 860,
-                fontSize: 22,
-                lineHeight: 1.55,
-                color: C.ink,
-                fontWeight: 600,
-              }}
-            >
-              CareerOS 不只是在告诉学生能不能投，而是把目标选择、JD 判断、建议落地和成长验证，连成一条持续协作的职业决策路径。
+              <div style={panelTopLine('scan')} />
+              <div style={panelGlowOrb('scan', {right: -70, top: -90, size: 240, opacity: 0.2})} />
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 900,
+                  color: C.scan,
+                  fontFamily: FONT.mono,
+                  letterSpacing: 1.8,
+                }}
+              >
+                系统定义
+              </div>
+              <div
+                style={{
+                  marginTop: 16,
+                  fontSize: 86,
+                  lineHeight: 0.92,
+                  fontWeight: 900,
+                  letterSpacing: -4,
+                  color: C.white,
+                }}
+              >
+                CareerOS
+                <br />
+                职业智能体
+              </div>
+              <div
+                style={{
+                  marginTop: 18,
+                  maxWidth: 860,
+                  fontSize: 22,
+                  lineHeight: 1.55,
+                  color: C.ink,
+                  fontWeight: 600,
+                }}
+              >
+                CareerOS 不只是在告诉学生能不能投，而是把目标选择、JD 判断、建议落地和成长验证，连成一条持续协作的职业决策路径。
+              </div>
             </div>
           </div>
 
@@ -257,16 +257,16 @@ export const CTAScene: React.FC = () => {
                 <div
                   key={item.who}
                   style={{
+                    position: 'relative',
                     minHeight: 260,
                     padding: '18px 18px 16px',
-                    border: '1px solid rgba(247,241,235,0.08)',
                     borderTop: `2px solid ${item.accent}`,
-                    background: 'linear-gradient(180deg, rgba(247,241,235,0.04) 0%, rgba(247,241,235,0.015) 100%)',
-                    boxShadow: '0 18px 50px rgba(0,0,0,0.16)',
+                    ...premiumPanel('scan'),
                     transform: `translateY(${(1 - p) * 18}px)`,
                     opacity: p,
                   }}
                 >
+                  <div style={panelTopLine('scan', 18)} />
                   <div
                     style={{
                       display: 'inline-flex',
@@ -316,7 +316,7 @@ export const CTAScene: React.FC = () => {
           position: 'absolute',
           left: 0,
           right: 0,
-          bottom: 126,
+          bottom: 116,
           display: 'flex',
           justifyContent: 'center',
           opacity: finalP,
@@ -325,30 +325,35 @@ export const CTAScene: React.FC = () => {
       >
         <div
           style={{
-            maxWidth: 1280,
-            textAlign: 'center',
-            transform: `translateY(${(1 - finalP) * 26}px) scale(${0.96 + finalP * 0.04})`,
+            position: 'relative',
+            width: 980,
+            padding: '24px 30px 28px',
+            textAlign: 'left',
+            transform: `translateY(${(1 - finalP) * 18}px) scale(${0.985 + finalP * 0.015})`,
+            ...premiumPanel('scan', true),
           }}
         >
+          <div style={panelTopLine('scan')} />
+          <div style={panelGlowOrb('scan', {right: -30, top: -80, size: 180, opacity: 0.14})} />
           <div
             style={{
-              fontSize: 12,
+              fontSize: 11,
               fontWeight: 900,
-              color: C.resolve,
+              color: C.scan,
               fontFamily: FONT.mono,
-              letterSpacing: 2.4,
+              letterSpacing: 2,
             }}
           >
-            FINAL LINE
+            系统结论
           </div>
           <div
             style={{
-              marginTop: 18,
-              fontSize: 70,
-              lineHeight: 0.98,
+              marginTop: 16,
+              fontSize: 56,
+              lineHeight: 1.02,
               fontWeight: 900,
               color: C.white,
-              letterSpacing: -3.4,
+              letterSpacing: -2.4,
             }}
           >
             CareerOS 不是一次匹配，
@@ -357,9 +362,10 @@ export const CTAScene: React.FC = () => {
           </div>
           <div
             style={{
-              marginTop: 16,
-              fontSize: 20,
-              lineHeight: 1.56,
+              marginTop: 12,
+              maxWidth: 760,
+              fontSize: 16,
+              lineHeight: 1.6,
               color: C.inkMuted,
             }}
           >

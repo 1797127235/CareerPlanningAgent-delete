@@ -93,7 +93,7 @@ export const ReportScene: React.FC = () => {
   return (
     <AbsoluteFill
       style={{
-        background: BG.close,
+        background: BG.scan,
         color: C.white,
         fontFamily: FONT.sans,
         overflow: 'hidden',
@@ -131,7 +131,7 @@ export const ReportScene: React.FC = () => {
           width: 680,
           height: 320,
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(168,144,112,0.12) 0%, transparent 72%)',
+          background: 'radial-gradient(circle, rgba(107,163,190,0.1) 0%, transparent 72%)',
           filter: 'blur(24px)',
         }}
       />
@@ -147,8 +147,8 @@ export const ReportScene: React.FC = () => {
           opacity: titleP,
         }}
       >
-        <div style={{...sectionRailLine, backgroundColor: C.resolve, boxShadow: `0 0 14px rgba(168,144,112,0.28)`}} />
-        <div style={{...sectionEyebrowText, color: C.resolve}}>职业发展报告</div>
+        <div style={{...sectionRailLine, backgroundColor: C.scan, boxShadow: `0 0 14px ${C.scanGlow}`}} />
+        <div style={{...sectionEyebrowText, color: C.scan}}>职业发展报告</div>
       </div>
 
       <div
@@ -175,7 +175,7 @@ export const ReportScene: React.FC = () => {
           position: 'absolute',
           right: 72,
           top: 52,
-          ...trailTag('resolve'),
+          ...trailTag('scan'),
           fontSize: 12,
           opacity: titleP,
         }}
@@ -203,13 +203,13 @@ export const ReportScene: React.FC = () => {
               style={{
                 position: 'relative',
                 padding: '18px 18px 16px',
-                ...premiumPanel('neutral'),
+                ...premiumPanel('scan'),
                 transform: `translateX(${(1 - p) * -18}px) translateY(${(1 - p) * 10}px) scale(${1 - (1 - p) * 0.03})`,
                 opacity: p,
                 boxShadow: '0 18px 40px rgba(0,0,0,0.16)',
               }}
             >
-              <div style={panelTopLine('resolve', 18)} />
+              <div style={panelTopLine('scan', 18)} />
               <div
                 style={{
                   position: 'absolute',
@@ -287,13 +287,13 @@ export const ReportScene: React.FC = () => {
             position: 'absolute',
             inset: 0,
             padding: '28px 32px 30px',
-            ...premiumPanel('resolve', true),
+            ...premiumPanel('scan', true),
             boxShadow: '0 34px 90px rgba(0,0,0,0.34), inset 0 0 40px rgba(107,163,190,0.04)',
             overflow: 'hidden',
           }}
         >
-          <div style={panelTopLine('resolve')} />
-          <div style={panelGlowOrb('resolve', {size: 300, right: -92, top: -96, opacity: 0.16})} />
+          <div style={panelTopLine('scan')} />
+          <div style={panelGlowOrb('scan', {size: 300, right: -92, top: -96, opacity: 0.16})} />
           <div
             style={{
               position: 'absolute',
@@ -324,7 +324,7 @@ export const ReportScene: React.FC = () => {
                   letterSpacing: 1.6,
                 }}
               >
-                CareerOS Final Brief
+                系统终局报告
               </div>
               <div
                 style={{
@@ -356,14 +356,14 @@ export const ReportScene: React.FC = () => {
               style={{
                 width: 232,
                 padding: '16px 16px 14px',
-                ...premiumPanel('resolve'),
+                ...premiumPanel('scan'),
               }}
             >
               <div
                 style={{
                   fontSize: 10,
                   fontWeight: 900,
-                  color: C.resolve,
+                  color: C.scan,
                   fontFamily: FONT.mono,
                   letterSpacing: 1.4,
                 }}
