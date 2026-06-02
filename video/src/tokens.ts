@@ -1,39 +1,43 @@
 export const C = {
-  bg: '#F9F4EE',
-  bgDark: '#1A1714',
-  ink: '#1F1F1F',
-  ink2: '#6B6560',
-  inkMuted: '#9A9590',
-  chestnut: '#6B3E2E',
-  chestnutLight: '#B85C38',
-  accent: '#D4956A',
-  white: '#FFFFFF',
-  paper: '#F5F0E8',
-  paper2: '#F2EDE4',
-  card: '#FCFAF7',
-  cardHover: '#FAF8F5',
-  line: '#D9D4CC',
-  lineSoft: '#E4D8CF',
-  highlight: '#FFF3CD',
-  success: '#4CAF50',
-  danger: '#E53935',
-  blue: '#3B82F6',
-  blueSoft: '#DBEAFE',
-  zoneSafe: '#22C55E',
-  zoneLeverage: '#3B82F6',
-  zoneTransition: '#F59E0B',
-  zoneDanger: '#EF4444',
-  scoreHigh: '#6B3E2E',
-  scoreMid: '#B85C38',
-  scoreLow: '#D4956A',
+  bg: '#1A1714',
+  bgDark: '#111111',
+
+  white: '#F7F1EB',
+  ink: '#E8E0D8',
+  inkMuted: 'rgba(247, 241, 235, 0.55)',
+
+  chestnut: '#C4A484',
+  chestnutLight: '#D4B494',
+
+  scan: '#6BA3BE',
+  scanDim: 'rgba(107, 163, 190, 0.15)',
+  scanGlow: 'rgba(107, 163, 190, 0.3)',
+
+  hit: '#8FBF7F',
+  hitDim: 'rgba(143, 191, 127, 0.12)',
+
+  gap: '#D4865A',
+  gapDim: 'rgba(212, 134, 90, 0.12)',
+  gapSharp: '#E8974F',
+
+  resolve: '#A89070',
+  resolveDeep: '#8B7456',
+
+  verdict: '#E8D4B8',
+  verdictDim: 'rgba(232, 212, 184, 0.08)',
+}
+
+export const BG = {
+  hook: 'linear-gradient(135deg, #0A0E14 0%, #111825 100%)',
+  scan: 'linear-gradient(160deg, #0C1018 0%, #0E1520 100%)',
+  verdict: 'linear-gradient(180deg, #0A0D12 0%, #0F1218 100%)',
+  resolve: 'linear-gradient(135deg, #141210 0%, #1A1714 100%)',
+  close: 'linear-gradient(135deg, #0E0C0A 0%, #1A1714 100%)',
 }
 
 export const FONT = {
-  sans: '"Noto Sans SC", system-ui, -apple-system, sans-serif',
-  serif: '"Noto Serif SC", Georgia, serif',
-  mono: '"JetBrains Mono", "Fira Code", monospace',
+  sans: 'Inter, system-ui, sans-serif',
+  mono: "'JetBrains Mono', 'SF Mono', 'Fira Code', monospace",
 }
 
 export const FPS = 30
-
-export const t = (sec: number) => sec * FPS

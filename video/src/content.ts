@@ -1,25 +1,20 @@
-export const BRAND = {
-  name: 'CareerOS',
-  tagline: '职途智析',
-  url: 'github.com/1797127235/CareerPlanningAgent',
+﻿export const VIDEO_META = {
+  totalSeconds: 98,
+  fps: 30,
 }
 
 export const HOOK = {
-  headline: 'CS 学生的职业规划，还在靠感觉？',
-  sub: '简历、岗位、JD、面试、成长……分散在 5 个工具里，拼不出一条完整的路。',
+  line1: '职业规划，学生缺的不是信息，',
+  line2: '而是一条完整的路径。',
+  sub: '简历、岗位、JD、面试、成长记录都存在，但它们彼此割裂。',
+  duration: 8,
 }
 
-export const STATS = [
-  { value: 45, label: '岗位节点' },
-  { value: 91.3, label: '% 技能匹配准确率' },
-  { value: 6, label: '核心模块' },
-  { value: 4, label: '维能力画像' },
-]
-
 export const UPLOAD_PROFILE_DATA = {
-  fileName: 'resume_linxiaobei.pdf',
+  duration: 12,
+  fileName: '学生简历.pdf',
   steps: ['上传简历', 'AI 解析', '生成画像'],
-  name: '林小北',
+  name: '一位计算机学生',
   target: '前端开发工程师',
   dimensionScores: [
     { name: '编程基础', score: 82 },
@@ -33,129 +28,59 @@ export const UPLOAD_PROFILE_DATA = {
     { name: 'TypeScript', level: '熟练' },
     { name: 'Node.js', level: '掌握' },
     { name: 'CSS', level: '熟练' },
-    { name: 'Webpack', level: '了解' },
-    { name: 'Python', level: '了解' },
   ],
-  duration: 12,
 }
 
 export const GRAPH_JD_DATA = {
-  // Phase 1: 45 role nodes
-  roles: [
-    { id: 'fe-mid', label: '前端开发', family: '前端开发', zone: 'safe', salary: '18K', skills: ['React', 'TypeScript', 'Webpack'], aiLeverage: 0.67 },
-    { id: 'fe-senior', label: '高级前端', family: '前端开发', zone: 'leverage', salary: '32K', skills: ['Performance', 'Architecture', 'Leadership'], aiLeverage: 0.7 },
-    { id: 'fe-arch', label: '前端架构师', family: '前端开发', zone: 'leverage', salary: '45K', skills: ['System Design', 'Performance', 'Mentoring'], aiLeverage: 0.75 },
-    { id: 'be-mid', label: '后端开发', family: '后端开发', zone: 'transition', salary: '19K', skills: ['Java', 'Spring', 'MySQL'], aiLeverage: 0.4 },
-    { id: 'be-senior', label: '高级后端', family: '后端开发', zone: 'leverage', salary: '35K', skills: ['Microservices', 'Redis', 'Kafka'], aiLeverage: 0.45 },
-    { id: 'fullstack', label: '全栈开发', family: '全栈', zone: 'leverage', salary: '25K', skills: ['React', 'Node.js', 'PostgreSQL'], aiLeverage: 0.72 },
-    { id: 'algo-mid', label: '算法工程师', family: 'AI/ML', zone: 'leverage', salary: '35K', skills: ['PyTorch', 'Python', 'Math'], aiLeverage: 0.85 },
-    { id: 'pm', label: '产品经理', family: '产品', zone: 'transition', salary: '22K', skills: ['Data Analysis', 'User Research', 'Roadmap'], aiLeverage: 0.55 },
-    { id: 'ui-designer', label: 'UI 设计师', family: '设计', zone: 'safe', salary: '16K', skills: ['Figma', 'Design System', 'Prototyping'], aiLeverage: 0.6 },
-    { id: 'ux-researcher', label: 'UX 研究员', family: '设计', zone: 'transition', salary: '20K', skills: ['User Testing', 'Data Analysis', 'Psychology'], aiLeverage: 0.5 },
-    { id: 'data-analyst', label: '数据分析师', family: '数据', zone: 'leverage', salary: '24K', skills: ['SQL', 'Python', 'Visualization'], aiLeverage: 0.78 },
-    { id: 'devops', label: 'DevOps 工程师', family: '运维', zone: 'leverage', salary: '28K', skills: ['Docker', 'K8s', 'CI/CD'], aiLeverage: 0.5 },
-    { id: 'sre', label: 'SRE', family: '运维', zone: 'leverage', salary: '30K', skills: ['Monitoring', 'Automation', 'Linux'], aiLeverage: 0.48 },
-    { id: 'mobile-ios', label: 'iOS 开发', family: '移动端', zone: 'safe', salary: '21K', skills: ['Swift', 'UIKit', 'SwiftUI'], aiLeverage: 0.62 },
-    { id: 'mobile-android', label: 'Android 开发', family: '移动端', zone: 'safe', salary: '20K', skills: ['Kotlin', 'Jetpack', 'Compose'], aiLeverage: 0.6 },
-    // Fill remaining to 45 with generic placeholders
-    ...Array.from({ length: 30 }, (_, i) => ({
-      id: `role-${i}`,
-      label: ['测试工程师', '运维工程师', '安全工程师', '数据工程师', 'AI 工程师', '增长黑客', '技术写作', '开发者关系', '技术经理', 'CTO'][i % 10],
-      family: ['后端开发', '运维', '安全', '数据', 'AI/ML', '产品', '技术写作', '社区', '管理', '管理'][i % 10],
-      zone: ['safe', 'leverage', 'transition', 'danger'][i % 4] as const,
-      salary: `${15 + (i % 20)}K`,
-      skills: ['Skill A', 'Skill B'],
-      aiLeverage: 0.3 + (i % 50) / 100,
-    })),
-  ],
-  // Phase 1: target path (user's career coordinate)
-  targetPath: [
-    { id: 'fe-mid', label: '前端开发' },
-    { id: 'fe-senior', label: '高级前端' },
-    { id: 'fe-arch', label: '前端架构师' },
-  ],
-  // Phase 2: radar comparison
-  radarAxes: [
-    { label: '技能深度', value: 0.7 },
-    { label: '场景宽度', value: 0.6 },
-    { label: '薪资潜力', value: 0.65 },
-    { label: '转型空间', value: 0.5 },
-    { label: 'AI 协同', value: 0.67 },
-  ],
-  userRadarScores: [0.55, 0.45, 0.5, 0.35, 0.6], // 林小北当前能力
-  matchScore: 73,
-  matchLabel: '中度匹配',
-  gapCount: 3,
-  // Phase 3: gap analysis + learning path
-  gapItems: [
-    { skill: 'Performance', current: 65, target: 90, hours: 400 },
-    { skill: '架构设计', current: 50, target: 85, hours: 500 },
-    { skill: '团队管理', current: 30, target: 75, hours: 300 },
-  ],
-  totalHours: 1200,
-  duration: 25,
+  duration: 26,
+  sceneLabel: '先推荐匹配岗位，再诊断 JD 差距',
+  matchScore: 78,
+  matchLabel: '目标岗位可达，但存在关键缺口',
+  evidence: ['来自简历画像', '来自真实 JD', '来自图谱技能要求'],
+  gapSkills: ['React 高级模式', '系统设计', 'SSR'],
 }
 
 export const INTERVIEW_AI_DATA = {
-  question: '请解释 React 中 useEffect 的清理机制，以及在什么场景下需要使用它？',
-  answer: 'useEffect 的清理机制通过返回一个函数来实现。当组件卸载或依赖项变化导致 effect 重新执行前，React 会调用上一次的清理函数。常见场景包括：清除定时器、取消订阅、中断 API 请求等。',
-  overallScore: 82,
-  perQuestion: [
-    { question: 'useEffect 清理机制', score: 85 },
-    { question: 'React 性能优化', score: 78 },
+  duration: 16,
+  sceneLabel: '建议给出之后，还要做一轮真实验证',
+  title: '让建议先接受一次面试验证',
+  sub: 'CareerOS 会带着画像、目标 JD、关键缺口和历史记录，发起一轮更有针对性的模拟面试。',
+  question: '结合你在协作白板项目中的性能优化经历，解释一次真实的瓶颈定位过程。',
+  answer:
+    '我先用 Chrome DevTools Performance 面板定位掉帧区间，再把问题收敛到 Canvas 重绘和状态更新频率。随后用 requestAnimationFrame 节流、脏矩形重绘和事件批处理，把白板拖拽时的帧率从 15fps 提到 55fps。',
+  followUp: '如果这是真实面试，CareerOS 还会继续追问：你怎么证明这次优化真的有效，而不是只感觉更流畅？',
+  contextSignals: [
+    { label: '画像项目', detail: '协作白板 · React / Canvas 性能优化' },
+    { label: '目标 JD', detail: '关注 React 深度、性能优化、工程表达' },
+    { label: '关键缺口', detail: '量化证据、系统表达、性能原理' },
+    { label: '历史记录', detail: '上轮复盘卡在“怎么证明优化有效”' },
   ],
-  strengths: ['概念理解清晰', '能结合实际场景举例'],
-  improvements: ['可以更深入讨论闭包陷阱', '建议补充自定义 Hook 的实践'],
-  aiImpact: {
-    label: 'AI 对前端开发的影响',
-    enhance: 67,
-    transition: 23,
-    danger: 10,
-  },
-  duration: 20,
+  checks: [
+    { label: '结构', detail: '已经能按“定位 → 分析 → 优化 → 结果”讲完整', status: '已建立' },
+    { label: '证据', detail: '开始引用工具和过程，但量化指标还不够充分', status: '继续追问' },
+    { label: '表达', detail: '回答更贴近真实面试，不再停留在概念背诵', status: '开始转化' },
+  ],
+  verdictTitle: '建议开始转化成可验证的面试表达',
+  verdictBody: '这轮回答已经能支撑继续投递，但智能体仍会围绕量化证据和关键缺口继续追问。',
+  nextActions: ['补一条量化复盘', '再练一轮关键追问', '结果写回成长手札'],
 }
 
 export const GROWTH_DATA_V2 = {
-  filters: ['全部', '项目', '面试', '学习', '计划'],
-  entries: [
-    { type: 'project', title: '在线协作白板 v2.0', subtitle: '完成了实时同步模块重构', tags: ['React', 'WebSocket'], status: '进行中' },
-    { type: 'interview', title: '字节跳动 · 一面', subtitle: '前端开发实习生', tags: ['算法', '系统设计'], status: '通过' },
-    { type: 'learning', title: '完成 WebGL 基础课程', subtitle: 'Three.js 官方教程 + 实践项目', tags: ['WebGL', 'Three.js'], status: '已完成' },
-  ],
-  aiSuggestion: '基于你近期的项目进度和面试表现，建议优先补强「系统设计」方向，同时保持前端深度练习。',
-  planItems: ['学习 React Profiler 性能分析', '完成系统设计基础课程', '模拟面试练习 3 次'],
-  duration: 20,
+  duration: 10,
+  aiSuggestion: '优先补强系统设计，同时保留前端深度练习。',
+  planItems: ['完成系统设计基础课程', '补一个 SSR 项目', '做 3 次模拟面试'],
 }
 
 export const REPORT_DATA = {
-  title: '林小北的职业发展报告',
-  date: '2026.05.31',
-  target: '前端开发工程师',
-  chapters: [
-    { numeral: 'I', title: '你是谁', summary: '编程基础扎实，前端技能突出，系统设计是短板' },
-    { numeral: 'II', title: '你能去哪', summary: '前端开发工程师（高度匹配），全栈方向（可转型）' },
-    { numeral: 'III', title: '差距', summary: 'React 高级模式、系统设计、SSR 是主要提升方向' },
-    { numeral: 'IV', title: '下一步', summary: '补强系统设计 → 模拟面试 → 目标字节跳动秋招' },
-  ],
-  actionPlan: [
-    { task: '完成系统设计基础课程', deadline: '2 周', evidence: '面试评估' },
-    { task: 'React 高级模式实战项目', deadline: '3 周', evidence: '项目记录' },
-    { task: '模拟面试练习 5 次', deadline: '1 周', evidence: '面试记录' },
-    { task: '字节跳动秋招投递', deadline: '4 周', evidence: '成长账本' },
-  ],
-  duration: 20,
+  duration: 12,
+  title: '一位计算机学生的职业发展报告',
+  finalLine: '前面的每一次分析，都会沉淀成可执行的职业规划。',
 }
 
 export const CTA_V2 = {
-  headline: '不只是职业建议，是证据驱动的职业操作系统',
-  sub: 'CareerOS · 开源 · 本地优先 · AI 驱动',
-  url: 'github.com/1797127235/CareerPlanningAgent',
+  duration: 14,
+  headline: '从画像，到差距判断，到建议，到成长。',
+  sub: 'CareerOS 是一套职业决策闭环系统。',
+  valuePills: ['面向学生', '面向高校', '面向机构'],
+  finalLine: 'CareerOS 不是一次匹配，而是一条持续协作的职业决策路径。',
 }
-
-export const UPLOAD_FLOW = { steps: [{ label: '上传简历', desc: 'PDF / DOC' }, { label: 'AI 解析', desc: '技能提取' }, { label: '能力画像', desc: '技能雷达' }], duration: 8 }
-export const PROFILE_DATA = { ...UPLOAD_PROFILE_DATA, strengths: ['快速学习'], weaknesses: ['系统设计不足'], recommendations: [{ title: '前端开发工程师', match: 87, zone: 'leverage' }, { title: '全栈开发', match: 72, zone: 'transition' }], internships: [{ company: '字节跳动', role: '前端实习生', period: '2024.06-2024.09' }], projects: [{ name: '协作白板', tech: 'React + WebSocket' }], duration: 8 }
-export const GRAPH_DATA = { ...GRAPH_JD_DATA, transitionPath: { from: '前端开发', to: '高级前端', gapSkills: ['Performance', 'Architecture'], hours: 1200 }, duration: 10 }
-export const JD_DATA = { sampleText: GRAPH_JD_DATA.jdText, matchScore: GRAPH_JD_DATA.matchScore, matchLabel: GRAPH_JD_DATA.matchLabel, dimensions: GRAPH_JD_DATA.dimensions, matchedSkills: GRAPH_JD_DATA.matchedSkills, gapSkills: GRAPH_JD_DATA.gapSkills, zone: { key: 'transition', label: '转型过渡区', desc: '' }, duration: 10 }
-export const INTERVIEW_DATA = { ...INTERVIEW_AI_DATA, tracks: [{ id: 'frontend', label: '前端开发', icon: 'Monitor' }, { id: 'backend', label: '后端开发', icon: 'Server' }], selectedTrack: '前端开发', perQuestion: [{ question: 'useEffect 清理机制', score: 85, feedback: '回答准确' }, { question: 'React 性能优化', score: 78, feedback: '缺少场景分析' }], duration: 12 }
-export const GROWTH_DATA = { ...GROWTH_DATA_V2, activeFilter: '全部', entries: [...GROWTH_DATA_V2.entries, { type: 'plan', title: '本周目标', subtitle: '性能优化专题', tags: ['性能优化'], status: '待完成' }], duration: 10 }
-export const CTA = CTA_V2

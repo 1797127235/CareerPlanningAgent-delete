@@ -1,129 +1,443 @@
 import React from 'react'
-import { useCurrentFrame, useVideoConfig, AbsoluteFill } from 'remotion'
-import { C, FONT } from '../tokens'
-import { INTERVIEW_AI_DATA } from '../content'
-import { ScoreRing, MiniNavbar, fadeIn, delayFrame } from '../components/UIPrimitives'
-import { SpringScaleIn, SPRING_POP } from '../components/Animations'
+import {AbsoluteFill, useCurrentFrame} from 'remotion'
+import {INTERVIEW_AI_DATA} from '../content'
+import {BG, C, FONT} from '../tokens'
+import {progressBetween} from '../motion/cinematic'
 
-const InterviewAIScene: React.FC = () => {
+const FPS = 30
+
+const panelStyle: React.CSSProperties = {
+  border: '1px solid rgba(107,163,190,0.1)',
+  background: 'linear-gradient(180deg, rgba(16,22,32,0.84) 0%, rgba(11,16,24,0.78) 100%)',
+  boxShadow: '0 26px 60px rgba(0,0,0,0.22), inset 0 0 32px rgba(107,163,190,0.03)',
+  backdropFilter: 'blur(10px)',
+}
+
+const pillStyle: React.CSSProperties = {
+  padding: '7px 10px',
+  border: '1px solid rgba(107,163,190,0.12)',
+  background: 'rgba(107,163,190,0.06)',
+  fontSize: 11,
+  fontWeight: 700,
+  color: C.white,
+}
+
+function PanelHeader({label, title}: {label: string; title: string}) {
+  return (
+    <div style={{display: 'flex', flexDirection: 'column', gap: 6}}>
+      <div style={{fontFamily: FONT.mono, fontSize: 10, letterSpacing: '0.08em', color: C.scan}}>
+        {label}
+      </div>
+      <div style={{fontSize: 17, lineHeight: 1.35, fontWeight: 800, color: C.white}}>
+        {title}
+      </div>
+    </div>
+  )
+}
+
+export const InterviewAIScene: React.FC = () => {
   const frame = useCurrentFrame()
-  const { fps } = useVideoConfig()
   const d = INTERVIEW_AI_DATA
 
+  const titleP = progressBetween(frame, 0, 1.2 * FPS)
+  const contextP = progressBetween(frame, 0.5 * FPS, 3 * FPS)
+  const consoleP = progressBetween(frame, 2 * FPS, 5.5 * FPS)
+  const answerP = progressBetween(frame, 4 * FPS, 7 * FPS)
+  const followP = progressBetween(frame, 6 * FPS, 9.5 * FPS)
+  const traceP = progressBetween(frame, 7.4 * FPS, 11.4 * FPS)
+  const evalP = progressBetween(frame, 8 * FPS, 12 * FPS)
+  const verdictP = progressBetween(frame, 10.5 * FPS, 15 * FPS)
+
   return (
-    <AbsoluteFill style={{ backgroundColor: C.bg, fontFamily: FONT.sans }}>
-      <MiniNavbar />
-      <div style={{ padding: '24px 60px 40px', height: 'calc(100% - 64px)', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, letterSpacing: 1, marginBottom: 16, opacity: fadeIn(frame, fps, 0, 0.4) }}>
-          04 · 面试教练
+    <AbsoluteFill style={{background: BG.scan, fontFamily: FONT.sans}}>
+      <div
+        style={{
+          height: 52,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 60px',
+          borderBottom: '1px solid rgba(107,163,190,0.08)',
+        }}
+      >
+        <div style={{fontFamily: FONT.mono, fontSize: 11, color: C.scan, letterSpacing: '0.06em', opacity: 0.82}}>
+          面试验证
         </div>
-        <div style={{ flex: 1, display: 'flex', gap: 32 }}>
-          <InterviewPhase d={d} frame={frame} fps={fps} />
-          <AIImpactPhase d={d} frame={frame} fps={fps} />
+        <div style={{fontFamily: FONT.mono, fontSize: 10, color: C.inkMuted, letterSpacing: '0.06em'}}>
+          画像信号 → 目标 JD → 关键缺口 → 面试验证
+        </div>
+      </div>
+
+      <div style={{padding: '34px 60px 40px', height: 'calc(100% - 52px)'}}>
+        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 32}}>
+          <div style={{opacity: titleP, maxWidth: 740}}>
+            <div style={{fontFamily: FONT.mono, fontSize: 11, color: C.scan, letterSpacing: '0.08em', marginBottom: 10}}>
+              面试验证
+            </div>
+            <div style={{fontSize: 58, lineHeight: 1.02, fontWeight: 900, color: C.white, letterSpacing: '-0.04em'}}>
+              {d.title}
+            </div>
+            <div style={{marginTop: 14, fontSize: 16, lineHeight: 1.7, color: C.inkMuted, maxWidth: 760}}>
+              {d.sub}
+            </div>
+          </div>
+
+          <div
+            style={{
+              ...panelStyle,
+              width: 330,
+              padding: '18px 20px',
+              opacity: contextP,
+            }}
+          >
+            <div style={{display: 'flex', alignItems: 'center', gap: 10}}>
+              <div
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  backgroundColor: C.scan,
+                  boxShadow: `0 0 12px ${C.scanGlow}`,
+                }}
+              />
+              <div style={{fontFamily: FONT.mono, fontSize: 11, fontWeight: 900, color: C.scan, letterSpacing: 1.4}}>
+                CareerOS 智能体
+              </div>
+            </div>
+            <div style={{marginTop: 12, fontSize: 21, lineHeight: 1.35, fontWeight: 800, color: C.white}}>
+              CareerOS 不会随机出题，而是围绕前面的真实证据继续追问。
+            </div>
+            <div style={{marginTop: 10, fontSize: 13, lineHeight: 1.6, color: C.inkMuted}}>
+              这一轮要验证的不是“会不会背题”，而是建议有没有真正转化成面试表达能力。
+            </div>
+          </div>
+        </div>
+
+        <div style={{display: 'grid', gridTemplateColumns: '350px 1fr 330px', gap: 24, marginTop: 28, height: 600}}>
+          <div
+            style={{
+              ...panelStyle,
+              padding: '22px 22px 18px',
+              opacity: contextP,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <PanelHeader label="本轮验证依据" title="智能体读取的是上下文，不是通用题库分类。" />
+            <div style={{marginTop: 18, display: 'flex', flexDirection: 'column', gap: 12}}>
+              {d.contextSignals.map((item, index) => (
+                <div
+                  key={item.label}
+                  style={{
+                    padding: '14px 14px 13px',
+                    border: '1px solid rgba(107,163,190,0.08)',
+                    background: index === 1 ? 'rgba(107,163,190,0.05)' : 'rgba(247,241,235,0.02)',
+                  }}
+                >
+                  <div style={{fontFamily: FONT.mono, fontSize: 10, letterSpacing: '0.06em', color: C.scan, marginBottom: 7}}>
+                    {item.label}
+                  </div>
+                  <div style={{fontSize: 14, lineHeight: 1.55, color: C.white}}>
+                    {item.detail}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div
+              style={{
+                marginTop: 14,
+                flex: 1,
+                display: 'grid',
+                gridTemplateRows: '1fr auto',
+                gap: 12,
+              }}
+            >
+              <div
+                style={{
+                  padding: '14px 14px 12px',
+                  border: '1px solid rgba(107,163,190,0.08)',
+                  background: 'linear-gradient(180deg, rgba(107,163,190,0.04) 0%, rgba(107,163,190,0.015) 100%)',
+                }}
+              >
+                <div style={{fontFamily: FONT.mono, fontSize: 10, letterSpacing: '0.06em', color: C.scan, marginBottom: 8}}>
+                  追问锚点
+                </div>
+                <div style={{display: 'flex', flexDirection: 'column', gap: 10}}>
+                  {['用项目细节证明优化是真实发生的', '用具体例子讲清性能变化前后的差别'].map((item) => (
+                    <div key={item} style={{display: 'flex', gap: 10, alignItems: 'flex-start'}}>
+                      <div
+                        style={{
+                          width: 8,
+                          height: 8,
+                          marginTop: 6,
+                          borderRadius: '50%',
+                          backgroundColor: C.scan,
+                          boxShadow: `0 0 10px ${C.scanGlow}`,
+                          flexShrink: 0,
+                        }}
+                      />
+                      <div style={{fontSize: 13, lineHeight: 1.6, color: C.white}}>{item}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div
+                style={{
+                  padding: '12px 14px 11px',
+                  border: '1px solid rgba(247,241,235,0.06)',
+                  background: 'rgba(247,241,235,0.02)',
+                }}
+              >
+                <div style={{fontFamily: FONT.mono, fontSize: 10, letterSpacing: '0.06em', color: C.chestnut, marginBottom: 7}}>
+                  本轮验证目标
+                </div>
+                <div style={{fontSize: 13, lineHeight: 1.6, color: C.inkMuted}}>
+                  把前面识别出的优化经历、系统表达和能力缺口，转化成可以继续追问的面试证据。
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            style={{
+              ...panelStyle,
+              padding: '20px 22px 18px',
+              position: 'relative',
+              overflow: 'hidden',
+              opacity: consoleP,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                background:
+                  'linear-gradient(180deg, rgba(107,163,190,0.06) 0%, rgba(107,163,190,0) 34%), radial-gradient(circle at 50% 0%, rgba(107,163,190,0.12), transparent 46%)',
+                pointerEvents: 'none',
+              }}
+            />
+
+            <div style={{position: 'relative', display: 'flex', flexDirection: 'column', minHeight: '100%'}}>
+              <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20}}>
+                <PanelHeader label="个性化面试控制台" title="本轮问题已按前序画像、JD 与缺口重新组织" />
+                <div style={{display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 8, maxWidth: 300}}>
+                  {['画像', '目标 JD', '关键缺口', '历史复盘'].map((tag) => (
+                    <div key={tag} style={pillStyle}>
+                      {tag}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  marginTop: 22,
+                  padding: '18px 18px 16px',
+                  borderLeft: `2px solid ${C.scan}`,
+                  background: 'rgba(247,241,235,0.02)',
+                }}
+              >
+                <div style={{fontFamily: FONT.mono, fontSize: 10, letterSpacing: '0.06em', color: C.scan, marginBottom: 10}}>
+                  问题投放
+                </div>
+                <div style={{fontSize: 23, lineHeight: 1.55, fontWeight: 700, color: C.white}}>
+                  {d.question}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  marginTop: 18,
+                  padding: '16px 18px',
+                  border: '1px solid rgba(143,191,127,0.12)',
+                  background: 'rgba(143,191,127,0.06)',
+                  opacity: answerP,
+                }}
+              >
+                <div style={{fontFamily: FONT.mono, fontSize: 10, letterSpacing: '0.06em', color: C.hit, marginBottom: 9}}>
+                  候选回答
+                </div>
+                <div style={{fontSize: 15, lineHeight: 1.68, color: C.ink}}>
+                  {d.answer}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  marginTop: 16,
+                  padding: '16px 18px',
+                  border: '1px solid rgba(232,151,79,0.16)',
+                  background: 'rgba(232,151,79,0.08)',
+                  opacity: followP,
+                }}
+              >
+                <div style={{display: 'flex', alignItems: 'center', gap: 10, marginBottom: 9}}>
+                  <div style={{width: 8, height: 8, borderRadius: '50%', backgroundColor: C.gapSharp, boxShadow: `0 0 12px ${C.gapSharp}`}} />
+                  <div style={{fontFamily: FONT.mono, fontSize: 10, letterSpacing: '0.06em', color: C.gapSharp}}>
+                    动态追问关键缺口
+                  </div>
+                </div>
+                <div style={{fontSize: 16, lineHeight: 1.6, color: C.white}}>
+                  {d.followUp}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  marginTop: 18,
+                  paddingTop: 18,
+                  borderTop: '1px solid rgba(107,163,190,0.08)',
+                  opacity: traceP,
+                }}
+              >
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12}}>
+                  {d.checks.map((item, index) => (
+                    <div
+                      key={item.label}
+                      style={{
+                        padding: '14px 14px 12px',
+                        border: '1px solid rgba(107,163,190,0.08)',
+                        background: 'rgba(247,241,235,0.02)',
+                      }}
+                    >
+                      <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10}}>
+                        <div style={{fontSize: 12, fontWeight: 900, color: C.white}}>
+                          {item.label}
+                        </div>
+                        <div
+                          style={{
+                            padding: '4px 7px',
+                            background: index === 1 ? 'rgba(232,151,79,0.12)' : 'rgba(143,191,127,0.12)',
+                            color: index === 1 ? C.gapSharp : C.hit,
+                            fontFamily: FONT.mono,
+                            fontSize: 10,
+                            letterSpacing: '0.05em',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {item.status}
+                        </div>
+                      </div>
+                      <div style={{marginTop: 8, fontSize: 12, lineHeight: 1.55, color: C.inkMuted}}>
+                        {item.detail}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div
+                  style={{
+                    marginTop: 14,
+                    padding: '14px 14px 12px',
+                    border: '1px solid rgba(107,163,190,0.08)',
+                    background: 'linear-gradient(180deg, rgba(107,163,190,0.04) 0%, rgba(107,163,190,0.015) 100%)',
+                  }}
+                >
+                  <div style={{fontFamily: FONT.mono, fontSize: 10, letterSpacing: '0.06em', color: C.scan, marginBottom: 10}}>
+                    本轮验证流
+                  </div>
+                  <div style={{display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10}}>
+                    {['问题投放', '候选回答', '动态追问', '结果回写成长手札'].map((step, index) => (
+                      <div key={step} style={{display: 'flex', alignItems: 'center', gap: 10}}>
+                        <div
+                          style={{
+                            width: 10,
+                            height: 10,
+                            borderRadius: '50%',
+                            backgroundColor: index < 3 ? C.scan : C.resolve,
+                            boxShadow: index < 3 ? `0 0 10px ${C.scanGlow}` : `0 0 10px ${C.resolve}`,
+                            flexShrink: 0,
+                          }}
+                        />
+                        <div style={{fontSize: 12, lineHeight: 1.45, color: C.white}}>
+                          {step}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div style={{display: 'flex', flexDirection: 'column', gap: 18}}>
+            <div
+              style={{
+                ...panelStyle,
+                padding: '20px 20px 18px',
+                opacity: evalP,
+              }}
+            >
+              <PanelHeader label="验证进展" title="智能体判断的不是会不会，而是有没有开始转化。" />
+              <div style={{marginTop: 18, display: 'flex', flexDirection: 'column', gap: 14}}>
+                {d.checks.map((item, index) => (
+                  <div
+                    key={item.label}
+                    style={{
+                      paddingBottom: index === d.checks.length - 1 ? 0 : 14,
+                      borderBottom: index === d.checks.length - 1 ? 'none' : '1px solid rgba(247,241,235,0.06)',
+                    }}
+                  >
+                    <div style={{display: 'flex', justifyContent: 'space-between', gap: 14, alignItems: 'center'}}>
+                      <div style={{fontSize: 16, fontWeight: 800, color: C.white}}>{item.label}</div>
+                      <div
+                        style={{
+                          padding: '5px 8px',
+                          background: index === 1 ? 'rgba(232,151,79,0.12)' : 'rgba(143,191,127,0.12)',
+                          color: index === 1 ? C.gapSharp : C.hit,
+                          fontFamily: FONT.mono,
+                          fontSize: 10,
+                          letterSpacing: '0.05em',
+                        }}
+                      >
+                        {item.status}
+                      </div>
+                    </div>
+                    <div style={{marginTop: 8, fontSize: 13, lineHeight: 1.55, color: C.inkMuted}}>
+                      {item.detail}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div
+              style={{
+                ...panelStyle,
+                padding: '20px 20px 18px',
+                opacity: verdictP,
+              }}
+            >
+              <PanelHeader label="本轮结论" title={d.verdictTitle} />
+              <div style={{marginTop: 12, fontSize: 14, lineHeight: 1.65, color: C.inkMuted}}>
+                {d.verdictBody}
+              </div>
+              <div style={{marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10}}>
+                {d.nextActions.map((item, index) => (
+                  <div
+                    key={item}
+                    style={{
+                      padding: '12px 12px 11px',
+                      borderLeft: `2px solid ${index === 2 ? C.scan : C.resolve}`,
+                      background: 'rgba(247,241,235,0.02)',
+                      color: C.white,
+                      fontSize: 14,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+              <div style={{marginTop: 14, fontFamily: FONT.mono, fontSize: 10, letterSpacing: '0.06em', color: C.scan}}>
+                面试结果将继续回流到成长手札
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </AbsoluteFill>
   )
 }
-
-const InterviewPhase: React.FC<{ d: typeof INTERVIEW_AI_DATA; frame: number; fps: number }> = ({ d, frame, fps }) => {
-  const questionVisible = fadeIn(frame, fps, 0.5, 0.5)
-  const answerDelay = 2.5
-  const f = delayFrame(frame, answerDelay, fps)
-  const charCount = Math.min(d.answer.length, Math.floor(f / 2))
-  const answerVisible = d.answer.slice(0, charCount)
-  const showAnswer = frame >= answerDelay * fps
-
-  const scoreVisible = fadeIn(frame, fps, 8, 0.5)
-  const feedbackVisible = fadeIn(frame, fps, 10, 0.5)
-
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 16 }}>
-      <div style={{ backgroundColor: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 16, padding: 20, opacity: questionVisible }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: '50%', backgroundColor: '#1E293B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: C.white }}>AI</div>
-          <span style={{ fontSize: 13, fontWeight: 700, color: C.ink2, fontFamily: FONT.sans }}>面试官提问</span>
-        </div>
-        <div style={{ fontSize: 15, color: C.ink, lineHeight: 1.6, fontFamily: FONT.sans }}>{d.question}</div>
-      </div>
-
-      {showAnswer && (
-        <div style={{ backgroundColor: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 16, padding: 20, opacity: fadeIn(frame, fps, answerDelay, 0.3) }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <div style={{ width: 28, height: 28, borderRadius: '50%', background: `linear-gradient(135deg, ${C.chestnut}, ${C.accent})`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: C.white, fontWeight: 700 }}>林</div>
-            <span style={{ fontSize: 13, fontWeight: 700, color: C.ink2, fontFamily: FONT.sans }}>我的回答</span>
-          </div>
-          <div style={{ fontSize: 13, color: C.ink, lineHeight: 1.7, fontFamily: FONT.sans, backgroundColor: C.paper2, padding: 14, borderRadius: 10, minHeight: 60, maxHeight: 120, overflow: 'hidden' }}>
-            {answerVisible}
-            {charCount < d.answer.length && <span style={{ borderRight: `2px solid ${C.chestnut}`, marginLeft: 1 }}> </span>}
-          </div>
-        </div>
-      )}
-
-      <div style={{ opacity: scoreVisible, display: 'flex', alignItems: 'center', gap: 20 }}>
-        <SpringScaleIn delay={7.5} duration={1} from={0.6} springConfig={SPRING_POP}>
-          <ScoreRing score={d.overallScore} size={80} delay={8} label="综合评分" />
-        </SpringScaleIn>
-        <div>
-          {d.perQuestion.map((q, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '6px 0', borderBottom: `1px solid ${C.lineSoft}` }}>
-              <span style={{ fontSize: 12, color: C.ink2, fontFamily: FONT.sans }}>{q.question}</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: q.score >= 80 ? C.chestnut : C.accent, fontFamily: FONT.sans, marginLeft: 12 }}>{q.score}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div style={{ opacity: feedbackVisible }}>
-        <div style={{ display: 'flex', gap: 16 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: C.success, marginBottom: 6 }}>亮点</div>
-            {d.strengths.map((s, i) => <div key={i} style={{ fontSize: 12, color: C.ink, marginBottom: 3, opacity: fadeIn(frame, fps, 10.3 + i * 0.2, 0.3) }}>✓ {s}</div>)}
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: C.accent, marginBottom: 6 }}>改进</div>
-            {d.improvements.map((s, i) => <div key={i} style={{ fontSize: 12, color: C.ink, marginBottom: 3, opacity: fadeIn(frame, fps, 10.6 + i * 0.2, 0.3) }}>○ {s}</div>)}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-const AIImpactPhase: React.FC<{ d: typeof INTERVIEW_AI_DATA; frame: number; fps: number }> = ({ d, frame, fps }) => {
-  const visible = fadeIn(frame, fps, 14, 0.6)
-  const impact = d.aiImpact
-  const bars = [
-    { label: 'AI 增强区', pct: impact.enhance, color: C.zoneSafe },
-    { label: '转型过渡区', pct: impact.transition, color: C.zoneTransition },
-    { label: '替代警惕区', pct: impact.danger, color: C.zoneDanger },
-  ]
-
-  return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', opacity: visible }}>
-      <div style={{ backgroundColor: C.card, border: `1px solid ${C.lineSoft}`, borderRadius: 16, padding: 24 }}>
-        <div style={{ fontSize: 13, fontWeight: 700, color: C.ink2, marginBottom: 16, letterSpacing: 1 }}>{impact.label}</div>
-        {bars.map((bar, i) => {
-          const f = delayFrame(frame, 14.5, fps)
-          const pct = Math.min(bar.pct, (f / (5 * fps)) * bar.pct * 3)
-          return (
-            <div key={i} style={{ marginBottom: 16 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: C.ink, marginBottom: 6, fontFamily: FONT.sans }}>
-                <span>{bar.label}</span>
-                <span style={{ fontWeight: 700 }}>{Math.round(Math.min(pct, bar.pct))}%</span>
-              </div>
-              <div style={{ height: 10, borderRadius: 5, backgroundColor: C.line, overflow: 'hidden' }}>
-                <div style={{ width: `${Math.min(pct, bar.pct)}%`, height: '100%', borderRadius: 5, backgroundColor: bar.color }} />
-              </div>
-            </div>
-          )
-        })}
-        <div style={{ marginTop: 16, padding: '12px 16px', backgroundColor: `${C.chestnut}08`, borderRadius: 10, borderLeft: `3px solid ${C.chestnut}`, fontSize: 13, color: C.ink2, lineHeight: 1.6, fontFamily: FONT.sans }}>
-          了解 AI 对你目标岗位的影响，才能做出更聪明的职业选择。
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default InterviewAIScene
