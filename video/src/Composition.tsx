@@ -1,66 +1,43 @@
 import React from 'react'
-import { Sequence } from 'remotion'
-import {
-  HOOK,
-  UPLOAD_PROFILE_DATA,
-  GRAPH_JD_DATA,
-  INTERVIEW_AI_DATA,
-  GROWTH_DATA_V2,
-  REPORT_DATA,
-  CTA_V2,
-} from './content'
+import { Audio, Sequence, staticFile } from 'remotion'
 import { HookScene } from './scenes/HookScene'
 import { UploadProfileScene } from './scenes/UploadProfileScene'
-import { GraphJDScene } from './scenes/GraphJDScene'
+import { GraphPositioningAct, JdJudgmentAct } from './scenes/GraphJDScene'
 import { InterviewAIScene } from './scenes/InterviewAIScene'
 import { GrowthScene } from './scenes/GrowthScene'
 import { ReportScene } from './scenes/ReportScene'
 import { CTAScene } from './scenes/CTAScene'
-import { FPS } from './tokens'
+// Each scene gets its own audio segment — no single merged track,
+// no cumulative drift from MP3 concat or Math.ceil rounding.
+const SCENES = [
+  { id: 'hook', audio: 'audio/01-intro.mp3', Scene: HookScene },
+  { id: 'profile', audio: 'audio/02-profile.mp3', Scene: UploadProfileScene },
+  { id: 'recommend', audio: 'audio/03-recommend.mp3', Scene: GraphPositioningAct },
+  { id: 'jd-gap', audio: 'audio/04-jd-gap.mp3', Scene: JdJudgmentAct },
+  { id: 'interview', audio: 'audio/05-interview.mp3', Scene: InterviewAIScene },
+  { id: 'growth', audio: 'audio/06-growth.mp3', Scene: GrowthScene },
+  { id: 'report', audio: 'audio/07-report.mp3', Scene: ReportScene },
+  { id: 'cta', audio: 'audio/08-outro.mp3', Scene: CTAScene },
+] as const
 
-const HOOK_DUR = HOOK.duration
-const UPLOAD_PROFILE_DUR = UPLOAD_PROFILE_DATA.duration
-const GRAPH_JD_DUR = GRAPH_JD_DATA.duration
-const INTERVIEW_AI_DUR = INTERVIEW_AI_DATA.duration
-const GROWTH_DUR = GROWTH_DATA_V2.duration
-const REPORT_DUR = REPORT_DATA.duration
-const CTA_DUR = CTA_V2.duration
+export type SceneDurations = Record<string, number>
 
-export const TOTAL_DUR =
-  (HOOK_DUR + UPLOAD_PROFILE_DUR + GRAPH_JD_DUR + INTERVIEW_AI_DUR + GROWTH_DUR + REPORT_DUR + CTA_DUR) * FPS
+export const CareerOSVideo: React.FC<{ durations: SceneDurations }> = ({
+  durations,
+}) => {
+  let cumulative = 0
 
-export const CareerOSVideo: React.FC = () => {
-  const hookStart = 0
-  const uploadProfileStart = hookStart + HOOK_DUR * FPS
-  const graphJDStart = uploadProfileStart + UPLOAD_PROFILE_DUR * FPS
-  const interviewAIStart = graphJDStart + GRAPH_JD_DUR * FPS
-  const growthStart = interviewAIStart + INTERVIEW_AI_DUR * FPS
-  const reportStart = growthStart + GROWTH_DUR * FPS
-  const ctaStart = reportStart + REPORT_DUR * FPS
+  const sequences = SCENES.map(({ id, audio, Scene }) => {
+    const from = cumulative
+    const dur = durations[id]
+    cumulative += dur
+    return (
+      <Sequence key={id} from={from} durationInFrames={dur}>
+        <Audio src={staticFile(audio)} />
+        <Scene />
+      </Sequence>
+    )
+  })
 
-  return (
-    <>
-      <Sequence from={hookStart} durationInFrames={HOOK_DUR * FPS}>
-        <HookScene />
-      </Sequence>
-      <Sequence from={uploadProfileStart} durationInFrames={UPLOAD_PROFILE_DUR * FPS}>
-        <UploadProfileScene />
-      </Sequence>
-      <Sequence from={graphJDStart} durationInFrames={GRAPH_JD_DUR * FPS}>
-        <GraphJDScene />
-      </Sequence>
-      <Sequence from={interviewAIStart} durationInFrames={INTERVIEW_AI_DUR * FPS}>
-        <InterviewAIScene />
-      </Sequence>
-      <Sequence from={growthStart} durationInFrames={GROWTH_DUR * FPS}>
-        <GrowthScene />
-      </Sequence>
-      <Sequence from={reportStart} durationInFrames={REPORT_DUR * FPS}>
-        <ReportScene />
-      </Sequence>
-      <Sequence from={ctaStart} durationInFrames={CTA_DUR * FPS}>
-        <CTAScene />
-      </Sequence>
-    </>
-  )
+  return <>{sequences}</>
 }

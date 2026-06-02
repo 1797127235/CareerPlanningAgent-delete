@@ -1,5 +1,5 @@
 ﻿import React from 'react'
-import { AbsoluteFill, interpolate, interpolateColors, useCurrentFrame } from 'remotion'
+import { AbsoluteFill, interpolate, interpolateColors, useCurrentFrame, useVideoConfig } from 'remotion'
 import { GRAPH_JD_DATA } from '../content'
 import { BG, C, FONT, FPS } from '../tokens'
 import { easeOutExpo, progressBetween } from '../motion/cinematic'
@@ -105,6 +105,30 @@ const routeCandidates = [
   },
 ]
 
+/** Standalone export: 岗位推荐画面（绑定 03-recommend 音频） */
+export const GraphPositioningAct: React.FC = () => {
+  const frame = useCurrentFrame()
+  const graphEnd = 8 * FPS
+
+  return (
+    <AbsoluteFill style={{ fontFamily: FONT.sans, overflow: 'hidden' }}>
+      <GraphPositioningActInner frame={frame} graphEnd={graphEnd} />
+    </AbsoluteFill>
+  )
+}
+
+/** Standalone export: JD 差距分析画面（绑定 04-jd-gap 音频） */
+export const JdJudgmentAct: React.FC = () => {
+  const frame = useCurrentFrame()
+
+  return (
+    <AbsoluteFill style={{ fontFamily: FONT.sans, overflow: 'hidden' }}>
+      <JdJudgmentActInner frame={frame} />
+    </AbsoluteFill>
+  )
+}
+
+/** @deprecated Kept for backward compat; prefer GraphPositioningAct + JdJudgmentAct */
 export const GraphJDScene: React.FC = () => {
   const frame = useCurrentFrame()
   const graphEnd = 8 * FPS
@@ -113,9 +137,9 @@ export const GraphJDScene: React.FC = () => {
   return (
     <AbsoluteFill style={{ fontFamily: FONT.sans, overflow: 'hidden' }}>
       {frame < targetEnd ? (
-        <GraphPositioningAct frame={frame} graphEnd={graphEnd} targetEnd={targetEnd} />
+        <GraphPositioningActInner frame={frame} graphEnd={graphEnd} />
       ) : (
-        <JdJudgmentAct frame={frame - targetEnd} />
+        <JdJudgmentActInner frame={frame - targetEnd} />
       )}
     </AbsoluteFill>
   )
@@ -162,11 +186,12 @@ const StageFocusHeader: React.FC<{
   )
 }
 
-const GraphPositioningAct: React.FC<{
+const GraphPositioningActInner: React.FC<{
   frame: number
   graphEnd: number
-  targetEnd: number
-}> = ({ frame, graphEnd, targetEnd }) => {
+}> = ({ frame, graphEnd }) => {
+  const { durationInFrames } = useVideoConfig()
+  const targetEnd = durationInFrames
   const appearP = (i: number) => progressBetween(frame, 4 + i * 4, 22 + i * 5, easeOutExpo)
   const signalP = progressBetween(frame, 0, 2.2 * FPS, easeOutExpo)
   const stageP = progressBetween(frame, 0.5 * FPS, 3.2 * FPS, easeOutExpo)
@@ -569,7 +594,7 @@ const GraphPositioningAct: React.FC<{
   )
 }
 
-const JdJudgmentAct: React.FC<{ frame: number }> = ({ frame }) => {
+const JdJudgmentActInner: React.FC<{ frame: number }> = ({ frame }) => {
   const d = GRAPH_JD_DATA
   const scanP = progressBetween(frame, 0, 4.8 * FPS)
   const compareP = progressBetween(frame, 3.6 * FPS, 7.4 * FPS)
