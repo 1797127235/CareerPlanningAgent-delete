@@ -3,6 +3,7 @@ import { AbsoluteFill, interpolate, useCurrentFrame } from 'remotion'
 import { GROWTH_DATA_V2 } from '../content'
 import { BG, C, FONT } from '../tokens'
 import { easeOutExpo, progressBetween } from '../motion/cinematic'
+import { panelGlowOrb, panelTopLine, premiumPanel, screenVignette, trailTag } from '../visualSystem'
 
 const FPS = 30
 
@@ -70,12 +71,13 @@ export const GrowthScene: React.FC = () => {
   return (
     <AbsoluteFill
       style={{
-        background: BG.resolve,
+        background: BG.scan,
         color: C.white,
         fontFamily: FONT.sans,
         overflow: 'hidden',
       }}
     >
+      <div style={{ ...screenVignette(0.24), zIndex: 1 }} />
       <div
         style={{
           position: 'absolute',
@@ -121,8 +123,8 @@ export const GrowthScene: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 64, height: 1, backgroundColor: C.resolve, boxShadow: `0 0 14px rgba(168,144,112,0.28)` }} />
-          <div style={{ fontSize: 15, fontWeight: 900, color: C.resolve, fontFamily: FONT.mono, letterSpacing: 2.2 }}>
+          <div style={{ width: 64, height: 1, backgroundColor: C.scan, boxShadow: `0 0 14px ${C.scanGlow}` }} />
+          <div style={{ fontSize: 15, fontWeight: 900, color: C.scan, fontFamily: FONT.mono, letterSpacing: 2.2 }}>
             成长手札
           </div>
         </div>
@@ -156,13 +158,7 @@ export const GrowthScene: React.FC = () => {
           position: 'absolute',
           right: 88,
           top: 56,
-          padding: '10px 14px',
-          border: '1px solid rgba(168,144,112,0.12)',
-          backgroundColor: 'rgba(168,144,112,0.05)',
-          fontSize: 12,
-          color: C.inkMuted,
-          fontFamily: FONT.mono,
-          letterSpacing: 1.3,
+          ...trailTag('scan'),
           zIndex: 12,
         }}
       >
@@ -177,17 +173,17 @@ export const GrowthScene: React.FC = () => {
           width: 900,
           height: 780,
           padding: '28px 28px 26px',
-          background: 'linear-gradient(180deg, rgba(247,241,235,0.035) 0%, rgba(247,241,235,0.015) 100%)',
-          border: '1px solid rgba(247,241,235,0.06)',
-          boxShadow: '0 24px 70px rgba(0,0,0,0.26)',
+          ...premiumPanel('scan', true),
           transform: `translateY(${(1 - notebookP) * 26}px)`,
           opacity: notebookP,
           zIndex: 10,
         }}
       >
+        <div style={panelTopLine('scan')} />
+        <div style={panelGlowOrb('scan', { size: 220, right: -60, top: -70, opacity: 0.12 })} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: C.resolve, fontFamily: FONT.mono, letterSpacing: 1.6 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: C.scan, fontFamily: FONT.mono, letterSpacing: 1.6 }}>
               学生成长手札
             </div>
             <div style={{ marginTop: 10, fontSize: 34, lineHeight: 1, fontWeight: 900, color: C.white }}>
@@ -234,10 +230,10 @@ export const GrowthScene: React.FC = () => {
                 style={{
                   minHeight: 182,
                   padding: '18px 18px 16px',
-                  background: 'linear-gradient(180deg, rgba(12,18,28,0.36) 0%, rgba(12,18,28,0.18) 100%)',
-                  border: '1px solid rgba(247,241,235,0.06)',
+                  background: 'linear-gradient(180deg, rgba(107,163,190,0.05) 0%, rgba(12,18,28,0.18) 100%)',
+                  border: '1px solid rgba(107,163,190,0.1)',
                   borderLeft: `4px solid ${item.accent}`,
-                  boxShadow: '0 14px 30px rgba(0,0,0,0.12)',
+                  boxShadow: '0 18px 34px rgba(0,0,0,0.16), inset 0 0 24px rgba(107,163,190,0.03)',
                   opacity: p * cardsP,
                   transform: `translateY(${(1 - p) * 18}px)`,
                 }}
@@ -287,8 +283,8 @@ export const GrowthScene: React.FC = () => {
                 style={{
                   minHeight: 184,
                   padding: '18px 18px 16px',
-                  background: 'linear-gradient(180deg, rgba(12,18,28,0.28) 0%, rgba(12,18,28,0.14) 100%)',
-                  border: '1px solid rgba(247,241,235,0.06)',
+                  background: 'linear-gradient(180deg, rgba(107,163,190,0.04) 0%, rgba(12,18,28,0.14) 100%)',
+                  border: '1px solid rgba(107,163,190,0.09)',
                   borderLeft: `4px solid ${block.accent}`,
                   opacity: p * cardsP,
                   transform: `translateY(${(1 - p) * 16}px)`,
@@ -353,13 +349,13 @@ export const GrowthScene: React.FC = () => {
         <div
           style={{
             padding: '22px 22px 20px',
-            background: 'linear-gradient(180deg, rgba(12,18,28,0.88) 0%, rgba(12,18,28,0.72) 100%)',
-            border: '1px solid rgba(107,163,190,0.14)',
-            boxShadow: '0 18px 46px rgba(0,0,0,0.2)',
+            ...premiumPanel('scan', true),
             opacity: signalsP,
             transform: `translateY(${(1 - signalsP) * 16}px)`,
           }}
         >
+          <div style={panelTopLine('scan')} />
+          <div style={panelGlowOrb('scan', { size: 180, right: -40, top: -54, opacity: 0.12 })} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div
               style={{
@@ -412,13 +408,12 @@ export const GrowthScene: React.FC = () => {
         <div
           style={{
             padding: '18px 20px 18px',
-            background: 'linear-gradient(180deg, rgba(247,241,235,0.025) 0%, rgba(247,241,235,0.012) 100%)',
-            border: '1px solid rgba(247,241,235,0.06)',
+            ...premiumPanel('scan'),
             opacity: 0.28 + queueP * 0.72,
             transform: `translateY(${(1 - queueP) * 10}px)`,
           }}
         >
-          <div style={{ fontSize: 11, fontWeight: 800, color: C.resolve, fontFamily: FONT.mono, letterSpacing: 1.5 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: C.scan, fontFamily: FONT.mono, letterSpacing: 1.5 }}>
             事件索引
           </div>
           <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -447,11 +442,11 @@ export const GrowthScene: React.FC = () => {
                   <div
                     style={{
                       padding: '4px 8px',
-                      border: '1px solid rgba(168,144,112,0.12)',
-                      backgroundColor: 'rgba(168,144,112,0.06)',
+                      border: '1px solid rgba(107,163,190,0.14)',
+                      backgroundColor: 'rgba(107,163,190,0.06)',
                       fontSize: 10,
                       fontWeight: 700,
-                      color: C.verdict,
+                      color: C.scan,
                       fontFamily: FONT.mono,
                     }}
                   >
@@ -466,13 +461,12 @@ export const GrowthScene: React.FC = () => {
         <div
           style={{
             padding: '24px 24px 22px',
-            background: 'linear-gradient(180deg, rgba(247,241,235,0.032) 0%, rgba(247,241,235,0.014) 100%)',
-            border: '1px solid rgba(247,241,235,0.06)',
+            ...premiumPanel('scan'),
             opacity: 0.18 + adviceP * 0.82,
             transform: `translateY(${(1 - adviceP) * 14}px)`,
           }}
         >
-          <div style={{ fontSize: 11, fontWeight: 800, color: C.verdict, fontFamily: FONT.mono, letterSpacing: 1.5 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, color: C.scan, fontFamily: FONT.mono, letterSpacing: 1.5 }}>
             建议更新
           </div>
           <div style={{ marginTop: 12, fontSize: 30, lineHeight: 1.18, fontWeight: 900, color: C.white }}>
@@ -498,15 +492,15 @@ export const GrowthScene: React.FC = () => {
                 key={item}
                 style={{
                   padding: '16px 18px',
-                  borderLeft: `4px solid ${C.resolve}`,
-                  backgroundColor: 'rgba(168,144,112,0.08)',
-                  border: '1px solid rgba(168,144,112,0.12)',
+                  borderLeft: `4px solid ${C.scan}`,
+                  backgroundColor: 'rgba(107,163,190,0.08)',
+                  border: '1px solid rgba(107,163,190,0.14)',
                   opacity: p,
                   transform: `translateX(${(1 - p) * 18}px)`,
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-                  <div style={{ fontSize: 18, fontWeight: 800, color: C.verdict, lineHeight: 1.3 }}>{item}</div>
+                  <div style={{ fontSize: 18, fontWeight: 800, color: C.white, lineHeight: 1.3 }}>{item}</div>
                   <div style={{ fontSize: 11, color: C.inkMuted, fontFamily: FONT.mono, letterSpacing: 1.2 }}>
                     Next {i + 1}
                   </div>
@@ -520,8 +514,7 @@ export const GrowthScene: React.FC = () => {
           style={{
             marginTop: 'auto',
             padding: '18px 20px',
-            backgroundColor: 'rgba(107,163,190,0.04)',
-            border: '1px solid rgba(107,163,190,0.12)',
+            ...premiumPanel('scan'),
             opacity: adviceP,
           }}
         >

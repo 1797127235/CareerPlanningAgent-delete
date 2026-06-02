@@ -171,9 +171,9 @@ const GraphPositioningAct: React.FC<{
   const signalP = progressBetween(frame, 0, 2.2 * FPS, easeOutExpo)
   const stageP = progressBetween(frame, 0.5 * FPS, 3.2 * FPS, easeOutExpo)
   const scoreShiftP = progressBetween(frame, 2.1 * FPS, graphEnd - 6, easeOutExpo)
-  const confirmP = progressBetween(frame, graphEnd - 8, targetEnd, easeOutExpo)
-  const confirmCardP = progressBetween(frame, 4.2 * FPS, 6.2 * FPS, easeOutExpo)
-  const targetLockP = progressBetween(frame, 7.8 * FPS, targetEnd - 4, easeOutExpo)
+  const confirmP = progressBetween(frame, 4.35 * FPS, 6.55 * FPS, easeOutExpo)
+  const confirmCardP = progressBetween(frame, 4.2 * FPS, 6.15 * FPS, easeOutExpo)
+  const targetLockP = progressBetween(frame, 4.5 * FPS, 6.45 * FPS, easeOutExpo)
   const targetPulse = 0.72 + 0.28 * Math.sin(frame / 8)
 
   const routeScore = (route: (typeof routeCandidates)[number]) => {
